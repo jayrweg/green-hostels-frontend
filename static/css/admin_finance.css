@@ -1,0 +1,42 @@
+.finance-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+.finance-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(44,62,80,0.08);
+  padding: 1.5rem 2rem;
+  min-width: 220px;
+  text-align: center;
+}
+.finance-month { font-size: 1.1rem; color: #1976d2; margin-bottom: 0.5rem; }
+.finance-income { color: #388e3c; font-weight: bold; }
+.finance-maint { color: #e53935; }
+.finance-net { font-size: 1.2rem; font-weight: bold; margin-top: 0.7rem; }
+.finance-net.positive { color: #388e3c; }
+.finance-net.negative { color: #e53935; }
+.finance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2rem;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(44,62,80,0.08);
+}
+.finance-table th, .finance-table td {
+  padding: 1rem;
+  text-align: center;
+}
+.finance-table th {
+  background: #1976d2;
+  color: #fff;
+}
+.finance-table tr:nth-child(even) {
+  background: #f8f8f8;
+}
+.positive { color: #388e3c; font-weight: bold; }
+.negative { color: #e53935; font-weight: bold; }

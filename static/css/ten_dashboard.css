@@ -1,0 +1,160 @@
+/* Layout base */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  overflow-x: hidden; /* ✅ Prevent horizontal scroll on body */
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background-color: #14532d; /* dark green */
+  color: white;
+  padding: 20px;
+  position: fixed;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden; /* ✅ Prevent sidebar horizontal scroll */
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: width 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar.collapsed {
+  width: 60px;
+}
+
+.sidebar .logo {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 30px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar-toggle {
+  position: absolute;
+  top: 10px;
+  right: -5px;
+  background-color: #14532d;
+  color: white;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 0 5px 5px 0;
+  font-size: 20px;
+  z-index: 1100;
+}
+
+.menu a {
+  display: block;
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  transition: background 0.3s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu a:hover,
+.menu a.active {
+  background-color: #166534; /* lighter green */
+}
+
+/* Main Content */
+.main-section {
+  margin-left: 260px;
+  padding: 30px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s ease;
+  overflow-x: hidden; /* ✅ Avoid overflow in content too */
+}
+
+.sidebar.collapsed ~ .main-section {
+  margin-left: 80px;
+}
+
+.main-content h2 {
+  margin-bottom: 15px;
+  color: #1f2937; /* dark grey */
+}
+
+.main-content p {
+  font-size: 1rem;
+  color: #374151;
+}
+
+/* Footer */
+.dashboard-footer {
+  text-align: center;
+  margin-top: auto;
+  padding: 1rem 0;
+  color: #555;
+  font-size: 0.9rem;
+  background-color: #e5e7eb;
+  border-top: 1px solid #ccc;
+  width: 100%;
+}
+
+.dashboard-wrapper {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden; /* ✅ Just in case on wrapper too */
+}
+
+/* Add to your dashboard and suggestions/announcements CSS */
+.dashboard-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(44,62,80,0.08);
+  padding: 1.5rem 2rem;
+  margin: 1rem 0;
+  text-align: center;
+  display: inline-block;
+  min-width: 180px;
+}
+.card-title {
+  font-size: 1.1rem;
+  color: #388e3c;
+  margin-bottom: 0.5rem;
+}
+.card-value {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #222;
+}
+.suggestion-list li, .announcement-list li {
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 1px 4px rgba(44,62,80,0.06);
+  padding: 1.2rem 1rem;
+  position: relative;
+  transition: box-shadow 0.2s;
+}
+.suggestion-list li:hover, .announcement-list li:hover {
+  box-shadow: 0 4px 16px rgba(44,62,80,0.12);
+}
+.delete-btn, .clear-btn {
+  background: #e53935;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.8rem;
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.delete-btn:hover, .clear-btn:hover {
+  background: #b71c1c;
+}

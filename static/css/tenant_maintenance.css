@@ -1,0 +1,32 @@
+.maintenance-list { list-style: none; padding: 0; }
+.maintenance-list li {
+  background: #f8f8f8;
+  border-radius: 10px;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+  padding: 1.2rem 1rem;
+  border-left: 5px solid #388e3c;
+  transition: box-shadow 0.2s;
+}
+.maintenance-pending { border-left-color: #fbc02d; }
+.maintenance-in_progress { border-left-color: #1976d2; }
+.maintenance-resolved { border-left-color: #388e3c; }
+.maint-title { font-weight: bold; font-size: 1.1rem; }
+.maint-status { margin-top: 0.5rem; color: #888; }
+.maint-resolved, .maint-amount { color: #388e3c; font-size: 0.95rem; }
+form { margin-bottom: 2rem; }
+input, textarea { width: 100%; margin-bottom: 0.7rem; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; }
+button { background: #388e3c; color: #fff; border: none; border-radius: 6px; padding: 0.5rem 1.2rem; cursor: pointer; }
+button:hover { background: #257942; }
+.maintenance-card {
+  background: #fffde7; /* light yellow */
+  border-left: 6px solid #fbc02d;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+}
+.request-date {
+  float: right;
+  color: #888;
+  font-size: 0.95em;
+}

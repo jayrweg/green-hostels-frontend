@@ -1,0 +1,55 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\tenant\suggestions.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suggestions - Green House Tenant</title>
+  <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/suggestions.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'tenant/sidebar.html' %}
+    <div class="main-section" id="mainContent">
+      <header class="dashboard-header">
+        <h1>Suggestion Box</h1>
+      </header>
+      <main class="main-content">
+        <div class="suggestions-container">
+          <form method="POST" action="/tenant/suggestions">
+            <textarea name="message" required placeholder="Your suggestion..." rows="4"></textarea>
+            <button type="submit">Submit Suggestion</button>
+          </form>
+          <form method="POST" action="/tenant/suggestions/clear" style="margin-bottom:1rem;">
+            <button type="submit" class="clear-btn" onclick="return confirm('Clear all your suggestions?')">Clear All</button>
+          </form>
+          <p class="info-text">Your suggestion will be visible to admins only.</p>
+          <ul class="suggestion-list">
+            {% for s in suggestions %}
+              <li>
+                <div class="suggestion-message">{{ s.message }}</div>
+                <div class="suggestion-meta">
+                  {{ s.created_at.strftime('%Y-%m-%d') }}
+                  <form method="POST" action="/tenant/suggestions/delete" style="display:inline;">
+                    <input type="hidden" name="id" value="{{ s.id }}">
+                    <button type="submit" class="delete-btn" onclick="return confirm('Delete this suggestion?')">🗑️</button>
+                  </form>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.getElementById('mainContent');
+      sidebar.classList.toggle('collapsed');
+      if (mainContent) mainContent.classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>

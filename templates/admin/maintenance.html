@@ -1,0 +1,66 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\maintenance.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Maintenance Management</title>
+  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <link rel="stylesheet" href="/static/css/admin_maintenance.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'admin/admin_sidebar.html' %}
+    <div class="main-section"> 
+      <div class="admin-add-request">
+        <h2>Add Admin Maintenance Request</h2>
+        <form method="POST" action="/admin/maintenance/admin_only">
+          <input type="text" name="title" placeholder="Title" required>
+          <textarea name="description" placeholder="Description" required></textarea>
+          <button type="submit" class="btn admin">Add Request</button>
+        </form>
+      </div>
+
+
+
+      <h1>All Maintenance Requests</h1>
+      <div class="maintenance-list">
+        {% for req in requests %}
+          <div class="maintenance-card {% if req.is_admin_only %}admin-only{% else %}tenant-only{% endif %}">
+            <div>
+              <strong>{{ req.title }}</strong>
+              <span class="request-date">{{ req.created_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+            <div>{{ req.description }}</div>
+            <div>
+              {% if req.is_admin_only %}
+                <span class="badge admin">Admin Request</span>
+              {% else %}
+                <span class="badge tenant">Tenant Request</span>
+              {% endif %}
+            </div>
+            <div>
+              {% if not req.is_admin_only %}
+                <span class="tenant-username">Submitted by: {{ req.tenant_username }}</span>
+              {% endif %}
+            </div>
+            <form method="POST" action="/admin/maintenance/hide/{{ req.id }}" style="display:inline;">
+              <button type="submit" class="btn delete" onclick="return confirm('Hide this request from your dashboard?')">Delete</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+      
+    </div>
+  </div>
+<script>
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('collapsed');
+  var mainSection = document.querySelector('.main-section');
+  if (mainSection) {
+    mainSection.classList.toggle('expanded');
+  }
+}
+</script>
+
+</body>
+</html>

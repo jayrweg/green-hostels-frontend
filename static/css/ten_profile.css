@@ -1,0 +1,158 @@
+.profile-container {
+  max-width: 600px;
+  margin: 2.5rem auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(44, 62, 80, 0.10);
+  padding: 2.5rem 2rem 2rem 2rem;
+  position: relative;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.profile-pic {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-pic img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #388e3c;
+  background: #f0f0f0;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 8px rgba(44, 62, 80, 0.08);
+}
+
+.profile-pic form {
+  margin-top: 0.5rem;
+}
+
+.profile-pic input[type="file"] {
+  margin-bottom: 0.5rem;
+}
+
+.profile-details {
+  margin-bottom: 2rem;
+  background: #f8f8f8;
+  border-radius: 10px;
+  padding: 1.5rem 1rem;
+  font-size: 1.08rem;
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.04);
+}
+
+.profile-details div {
+  margin-bottom: 0.7rem;
+}
+
+.profile-details strong {
+  color: #388e3c;
+  font-weight: 600;
+}
+
+.editable-section {
+  background: #f4fff6;
+  border-radius: 10px;
+  padding: 1.5rem 1rem;
+  box-shadow: 0 1px 4px rgba(44, 62, 80, 0.04);
+}
+
+.editable-section label {
+  display: block;
+  margin-top: 1rem;
+  font-weight: 600;
+  color: #388e3c;
+}
+
+.editable-section input[type="text"] {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #b2dfdb;
+  margin-top: 0.25rem;
+  background: #fff;
+  font-size: 1rem;
+}
+
+.editable-section button {
+  background: #388e3c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 1.5rem;
+}
+
+.editable-section button:hover {
+  background: #2e7031;
+}
+
+.editable-section hr {
+  border: none;
+  border-top: 1px solid #b2dfdb;
+  margin: 1.2rem 0;
+}
+
+h2 {
+  text-align: center;
+  color: #388e3c;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-footer {
+  text-align: center;
+  margin-top: 2rem;
+  color: #888;
+  font-size: 0.98rem;
+}
+
+.flash-messages {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+.alert-success {
+  background: #e6f9ec;
+  color: #257942;
+  border: 1px solid #b2dfdb;
+  border-radius: 6px;
+  padding: 0.7rem 1.2rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.contract-btn {
+  display: inline-block;
+  background: #388e3c;
+  color: #fff;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  margin-top: 0.3rem;
+  border: none;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.contract-btn:hover:enabled,
+.contract-btn:focus:enabled {
+  background: #2e7031;
+  color: #fff;
+}
+.contract-btn[disabled] {
+  background: #bdbdbd;
+  color: #fff;
+  cursor: not-allowed;
+  pointer-events: none;
+}

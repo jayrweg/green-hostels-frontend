@@ -1,0 +1,61 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\finance.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Finance - Admin</title>
+  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <link rel="stylesheet" href="/static/css/admin_finance.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'admin/admin_sidebar.html' %}
+    <div class="main-section">
+      <h1>Finance Overview</h1>
+      <div class="finance-cards">
+        {% for m in summary %}
+        <div class="finance-card">
+          <div class="finance-month">{{ m.month }}</div>
+          <div class="finance-income">Income: ₦{{ "{:,.2f}".format(m.income) }}</div>
+          <div class="finance-maint">Maintenance: ₦{{ "{:,.2f}".format(m.maintenance) }}</div>
+          <div class="finance-net {% if m.net >= 0 %}positive{% else %}negative{% endif %}">
+            Net: ₦{{ "{:,.2f}".format(m.net) }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      <table class="finance-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Total Income</th>
+            <th>Total Maintenance</th>
+            <th>Net Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in summary %}
+          <tr>
+            <td>{{ m.month }}</td>
+            <td>₦{{ "{:,.2f}".format(m.income) }}</td>
+            <td>₦{{ "{:,.2f}".format(m.maintenance) }}</td>
+            <td class="{% if m.net >= 0 %}positive{% else %}negative{% endif %}">₦{{ "{:,.2f}".format(m.net) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+<script>
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('collapsed');
+  var mainSection = document.querySelector('.main-section');
+  if (mainSection) {
+    mainSection.classList.toggle('expanded');
+  }
+}
+</script>
+
+</body>
+</html>

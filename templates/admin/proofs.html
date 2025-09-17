@@ -1,0 +1,53 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\proofs.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Proof Verification - Admin</title>
+  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <link rel="stylesheet" href="/static/css/admin_proofs.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'admin/admin_sidebar.html' %}
+    <div class="main-section">
+      <h1>Proofs Pending Verification</h1>
+      <ul class="proof-list">
+        {% for p in proofs %}
+        <li class="proof-{{ p.status }}">
+          <div class="proof-message">{{ p.message }}</div>
+          <div class="proof-status">Status: {{ p.status|capitalize }}</div>
+          <div class="proof-file">
+            <a href="{{ p.file_url }}" target="_blank">View File</a>
+          </div>
+          <div class="proof-date">Uploaded: {{ p.created_at }}</div>
+          {% if p.status == 'pending' %}
+            <form method="POST" action="/admin/proofs/approve" style="display:inline;">
+              <input type="hidden" name="id" value="{{ p.id }}">
+              <button type="submit" class="approve-btn">Approve</button>
+            </form>
+            <form method="POST" action="/admin/proofs/reject" style="display:inline;">
+              <input type="hidden" name="id" value="{{ p.id }}">
+              <button type="submit" class="reject-btn">Reject</button>
+            </form>
+          {% elif p.status == 'approved' %}
+            <a href="/admin/transactions?tenant_id={{ p.tenant_id }}&transaction_id={{ p.transaction_id }}" class="go-trans-btn">Go to Transaction</a>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+<script>
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('collapsed');
+  var mainSection = document.querySelector('.main-section');
+  if (mainSection) {
+    mainSection.classList.toggle('expanded');
+  }
+}
+</script>
+
+</body>
+</html>

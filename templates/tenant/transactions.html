@@ -1,0 +1,41 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\tenant\transactions.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Transactions - Tenant</title>
+  <link rel="stylesheet" href="/static/css/tenant_transactions.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'tenant/sidebar.html' %}
+    <div class="main-section">
+      <h1>Your Transactions</h1>
+      <ul class="transaction-list">
+        {% for t in transactions %}
+        <li class="{% if t.required_amount == t.submitted_amount %}transaction-complete{% endif %}">
+          <div class="trans-room">Room: {{ t.room_number }} (Floor {{ t.floor_number }})</div>
+          <div class="trans-amounts">
+            Required: ₦{{ t.required_amount }} | Submitted: ₦{{ t.submitted_amount }}
+          </div>
+          <div class="trans-dates">
+            Check-in: {{ t.check_in }} | Check-out: {{ t.check_out }}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+<script>
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('collapsed');
+  var mainSection = document.querySelector('.main-section');
+  if (mainSection) {
+    mainSection.classList.toggle('expanded');
+  }
+}
+</script>
+
+</body>
+</html>

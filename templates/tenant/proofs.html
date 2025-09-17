@@ -1,0 +1,49 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\tenant\proofs.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Proof Uploads - Tenant</title>
+  <link rel="stylesheet" href="/static/css/sidebar.css">
+  <link rel="stylesheet" href="/static/css/tenant_proofs.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'tenant/sidebar.html' %}
+    <div class="main-section">
+      <h1>Upload Proof of Transaction</h1>
+      <form method="POST" action="/tenant/proofs/upload" enctype="multipart/form-data" class="proof-form">
+        <input type="number" name="amount" placeholder="Enter Amount (TZS) " min="0" step="0.01" required>
+        <input type="file" name="proof_file" accept="image/*,application/pdf" required>
+        <textarea name="message" placeholder="Message (optional)"></textarea>
+        <button type="submit">Upload Proof</button>
+      </form>
+      <h2>Your Proof Uploads</h2>
+      <ul class="proof-list">
+        {% for p in proofs %}
+        <li class="proof-{{ p.status }}">
+          <div class="proof-message">{{ p.message }}</div>
+          <div class="proof-amount">Amount: TZS{{ p.amount }}</div>
+          <div class="proof-status">Status: {{ p.status|capitalize }}</div>
+          <div class="proof-file">
+            <a href="{{ p.file_url }}" target="_blank">View File</a>
+          </div>
+          <div class="proof-date">Uploaded: {{ p.created_at }}</div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+<script>
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('collapsed');
+  var mainSection = document.querySelector('.main-section');
+  if (mainSection) {
+    mainSection.classList.toggle('expanded');
+  }
+}
+</script>
+
+</body>
+</html>

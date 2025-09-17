@@ -1,0 +1,53 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\announcements_admin.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Announcements - Green House Admin</title>
+  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <link rel="stylesheet" href="/static/css/announcements_admin.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'admin/admin_sidebar.html' %}
+    <div class="main-section" id="mainContent">
+      <header class="dashboard-header">
+        <h1>Manage Announcements</h1>
+      </header>
+      <main class="main-content">
+        <div class="announcements-admin-container">
+          <form method="POST" action="/admin/announcements">
+            <input type="text" name="title" placeholder="Title" required>
+            <textarea name="message" required placeholder="Announcement message..." rows="4"></textarea>
+            <button type="submit">Post Announcement</button>
+          </form>
+          <ul class="announcement-list">
+            {% for ann in announcements %}
+              <li>
+                <div class="announcement-title">{{ ann.title }}</div>
+                <div class="announcement-message">{{ ann.message }}</div>
+                <div class="announcement-meta">
+                  Posted on {{ ann.created_at.strftime('%Y-%m-%d') }}
+                  <form method="POST" action="/admin/announcements/delete" style="display:inline;">
+                    <input type="hidden" name="id" value="{{ ann.id }}">
+                    <button type="submit" class="delete-btn" onclick="return confirm('Delete this announcement?')">🗑️</button>
+                  </form>
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.getElementById('mainContent');
+      sidebar.classList.toggle('collapsed');
+      if (mainContent) mainContent.classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>

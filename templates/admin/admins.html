@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Accounts - Super Admin</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/header.css" />
+  <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/content.css" />
+  <link rel="stylesheet" href="/static/css/forms.css" />
+  <link rel="stylesheet" href="/static/css/buttons.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="stylesheet" href="/static/css/admins.css" />
+  <link rel="stylesheet" href="/static/css/admin_sidebar.css">
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+
+    {% include 'admin/admin_sidebar.html' %}
+
+    <div class="main-section flex-column" id="mainContent">
+      <header class="dashboard-header">
+        <h1>Admin Accounts</h1>
+      </header>
+
+      <main class="main-content">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <section class="dashboard-section active">
+          <div class="card">
+            <h2>Manage Admins</h2>
+            <p>Add new admins, reset passwords, or remove admin accounts.</p>
+          </div>
+
+          <!-- Add Admin Form -->
+          <div class="form-section">
+            <h3>Add New Admin</h3>
+            <form action="/admin/admins/add" method="POST" class="admin-form">
+              <div class="form-group">
+                <label for="name">Full Name:</label>
+                <input type="text" name="name" id="name" required />
+              </div>
+              <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" name="username" id="username" required />
+              </div>
+              <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" name="email" id="email" required />
+              </div>
+              <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" name="password" id="password" required />
+              </div>
+              <button type="submit" class="btn upload">Add Admin</button>
+            </form>
+          </div>
+
+          <!-- Admins Table -->
+          <div class="admins-table-wrapper">
+            <h3>Existing Admins</h3>
+            <table class="admins-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for admin in admins %}
+                  <tr>
+                    <td>{{ admin.id }}</td>
+                    <td>{{ admin.name }}</td>
+                    <td>{{ admin.username }}</td>
+                    <td>{{ admin.email }}</td>
+                    <td>
+                      <span class="role-badge {{ admin.role }}">
+                        {{ admin.role|capitalize }}
+                      </span>
+                    </td>
+                    <td>
+                      <form action="/admin/admins/reset_password" method="POST" class="inline-form">
+                        <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                        <input type="password" name="new_password" placeholder="New Password" required>
+                        <button type="submit" class="btn edit">Reset</button>
+                      </form>
+                      {% if admin.role != "superadmin" %}
+                      <form action="/admin/admins/delete" method="POST" class="inline-form" onsubmit="return confirm('Are you sure you want to delete this admin?');">
+                        <input type="hidden" name="admin_id" value="{{ admin.id }}">
+                        <button type="submit" class="btn delete">Delete</button>
+                      </form>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Reset Own Password -->
+          <div class="form-section">
+            <h3>Reset Your Password</h3>
+            <form action="/admin/admins/reset_own_password" method="POST" class="admin-form">
+              <div class="form-group">
+                <label for="current_password">Current Password:</label>
+                <input type="password" name="current_password" id="current_password" required />
+              </div>
+              <div class="form-group">
+                <label for="new_password">New Password:</label>
+                <input type="password" name="new_password" id="new_password" required />
+              </div>
+              <button type="submit" class="btn shift">Update Password</button>
+            </form>
+          </div>
+        </section>
+      </main>
+
+      <footer class="dashboard-footer">
+        &copy; 2025 Green House. All rights reserved.
+      </footer>
+    </div>
+  </div>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    sidebar.classList.toggle('collapsed');
+    if (mainContent) mainContent.classList.toggle('collapsed');
+  }
+</script>
+
+</body>
+</html>

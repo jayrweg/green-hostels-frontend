@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tenant Dashboard - Green House</title>
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/header.css" />
+  <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/content.css" />
+  <link rel="stylesheet" href="/static/css/forms.css" />
+  <link rel="stylesheet" href="/static/css/buttons.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="stylesheet" href="/static/css/ten_dashboard.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-toggle" onclick="toggleSidebar()">☰</div>
+      <h2 class="logo">🏠 GH</h2>
+      <nav class="menu">
+        <a href="/tenant/dashboard" class="active">Dashboard</a>
+        <a href="/tenant/profile">Profile</a>
+        <a href="/tenant/contracts">Contracts</a>
+        <a href="/tenant/rules">Rules</a>
+        <a href="/tenant/calendar">Calendar</a>
+        <a href="/tenant/proofs">Uploads</a>
+        <a href="/tenant/transactions">Transactions</a>
+        <a href="/tenant/suggestions">Suggestions</a>
+        <a href="/tenant/maintenance">Maintenance</a>
+        <a href="/tenant/announcements">Announcements</a>
+        <a href="/tenant/downloads">Downloads</a>
+        <a href="/logout">Logout</a>
+      </nav>
+    </aside>
+
+    <div class="main-section" id="mainContent">
+      <header class="dashboard-header">
+        <h1>Tenant Dashboard</h1>
+      </header>
+
+      <main class="main-content">
+        <h2>Welcome, {{ tenant_name }}!</h2>
+        <p>This is your personal dashboard where you can view and manage all your tenancy-related information.</p>
+
+        <div class="dashboard-card new-announcements-card">
+          <div class="card-title">New Announcements</div>
+          <div class="card-value">{{ new_announcements_count }}</div>
+        </div>
+      </main>
+
+      <footer class="dashboard-footer">
+        &copy; 2025 Green House. All rights reserved.
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.getElementById('mainContent');
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>

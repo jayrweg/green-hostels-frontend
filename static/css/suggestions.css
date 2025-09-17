@@ -1,0 +1,103 @@
+/* Add to admin_announcements.css, tenant_announcements.css, admin_suggestions.css, tenant_suggestions.css */
+.announcement-list, .suggestion-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.announcement-list li, .suggestion-list li {
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 1px 4px rgba(44,62,80,0.06);
+  padding: 1.2rem 1rem;
+  position: relative;
+}
+.announcement-title {
+  font-weight: bold;
+  color: #388e3c;
+  font-size: 1.15rem;
+}
+.announcement-meta, .suggestion-meta {
+  font-size: 0.92rem;
+  color: #888;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.delete-btn, .clear-btn {
+  background: #e53935;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.8rem;
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.delete-btn:hover, .clear-btn:hover {
+  background: #b71c1c;
+}
+.flash-messages {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+.alert-success {
+  background: #e6f9ec;
+  color: #257942;
+  border: 1px solid #b2dfdb;
+  border-radius: 6px;
+  padding: 0.7rem 1.2rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+
+/* Add to your dashboard and suggestions/announcements CSS */
+.dashboard-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(44,62,80,0.08);
+  padding: 1.5rem 2rem;
+  margin: 1rem 0;
+  text-align: center;
+  display: inline-block;
+  min-width: 180px;
+}
+.card-title {
+  font-size: 1.1rem;
+  color: #388e3c;
+  margin-bottom: 0.5rem;
+}
+.card-value {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #222;
+}
+.suggestion-list li, .announcement-list li {
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 1px 4px rgba(44,62,80,0.06);
+  padding: 1.2rem 1rem;
+  position: relative;
+  transition: box-shadow 0.2s;
+}
+.suggestion-list li:hover, .announcement-list li:hover {
+  box-shadow: 0 4px 16px rgba(44,62,80,0.12);
+}
+.delete-btn, .clear-btn {
+  background: #e53935;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.8rem;
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.delete-btn:hover, .clear-btn:hover {
+  background: #b71c1c;
+}

@@ -1,0 +1,18 @@
+.transaction-list { list-style: none; padding: 0; }
+.transaction-list li {
+  background: #f8f8f8;
+  border-radius: 10px;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+  padding: 1.2rem 1rem;
+  border-left: 5px solid #388e3c;
+  transition: box-shadow 0.2s;
+}
+.transaction-complete { border-left-color: #1976d2; background: #e3f2fd; }
+.trans-room, .trans-tenant, .trans-amounts, .trans-dates { margin-bottom: 0.5rem; }
+.edit-form input { width: 120px; margin-right: 0.5rem; }
+.edit-form button { background: #388e3c; color: #fff; border: none; border-radius: 6px; padding: 0.3rem 1rem; cursor: pointer; }
+.edit-form button:hover { background: #257942; }
+.transaction-form input { width: 180px; margin-right: 0.5rem; }
+.transaction-form button { background: #388e3c; color: #fff; border: none; border-radius: 6px; padding: 0.5rem 1.2rem; cursor: pointer; }
+.transaction-form button:hover { background: #257942; }

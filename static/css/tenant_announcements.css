@@ -1,0 +1,77 @@
+/* Add to admin_announcements.css, tenant_announcements.css, admin_suggestions.css, tenant_suggestions.css */
+.announcement-list, .suggestion-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.announcement-list li, .suggestion-list li {
+  background: #f8f8f8;
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 1px 4px rgba(44,62,80,0.06);
+  padding: 1.2rem 1rem;
+  position: relative;
+}
+.announcement-title {
+  font-weight: bold;
+  color: #388e3c;
+  font-size: 1.15rem;
+}
+.announcement-meta, .suggestion-meta {
+  font-size: 0.92rem;
+  color: #888;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.delete-btn, .clear-btn {
+  background: #e53935;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.8rem;
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.delete-btn:hover, .clear-btn:hover {
+  background: #b71c1c;
+}
+.flash-messages {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+.alert-success {
+  background: #e6f9ec;
+  color: #257942;
+  border: 1px solid #b2dfdb;
+  border-radius: 6px;
+  padding: 0.7rem 1.2rem;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+/* Add to suggestions_admin.css, tenant_announcements.css, etc. */
+.mark-read-btn {
+  background: #388e3c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.8rem;
+  font-size: 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.mark-read-btn:hover {
+  background: #257942;
+}
+.mark-read-btn[disabled],
+.mark-read-btn:disabled {
+  background: #bdbdbd;
+  color: #fff;
+  cursor: not-allowed;
+  opacity: 0.7;
+  pointer-events: none;
+}

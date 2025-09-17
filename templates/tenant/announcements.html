@@ -1,0 +1,50 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\tenant\announcements.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Announcements - Green House Tenant</title>
+  <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/tenant_announcements.css" />
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'tenant/sidebar.html' %}
+    <div class="main-section" id="mainContent">
+      <header class="dashboard-header">
+        <h1>Announcements</h1>
+      </header>
+      <main class="main-content">
+        <div class="announcements-container">
+          {% if announcements %}
+            <ul class="announcement-list">
+              {% for ann in announcements %}
+                <li>
+                  <div class="announcement-title">{{ ann.title }}</div>
+                  <div class="announcement-message">{{ ann.message }}</div>
+                  <div class="announcement-meta">Posted on {{ ann.created_at.strftime('%Y-%m-%d') }}</div>
+                  <form method="POST" action="/tenant/announcements/mark_read" style="display:inline;">
+                    <input type="hidden" name="id" value="{{ ann.id }}">
+                   <button type="submit" class="mark-read-btn" {% if ann.id in tenant_read_announcements %}disabled{% endif %}>Mark as Read</button>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>No announcements yet.</p>
+          {% endif %}
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.getElementById('mainContent');
+      sidebar.classList.toggle('collapsed');
+      if (mainContent) mainContent.classList.toggle('collapsed');
+    }
+  </script>
+</body>
+</html>

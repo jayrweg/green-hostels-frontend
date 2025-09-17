@@ -1,0 +1,11 @@
+.dashboard-header {
+  background-color: #ffffff;
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.dashboard-header h1 {
+  font-size: 1.5rem;
+  color: #1f8f52;
+}

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contracts</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/header.css">
+  <link rel="stylesheet" href="/static/css/sidebar.css">
+  <link rel="stylesheet" href="/static/css/content.css">
+  <link rel="stylesheet" href="/static/css/forms.css">
+  <link rel="stylesheet" href="/static/css/buttons.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  <link rel="stylesheet" href="/static/css/contracts.css" />
+  <link rel="stylesheet" href="/static/css/admin_sidebar.css">
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+
+    <!-- Sidebar -->
+    {% include 'admin/admin_sidebar.html' %}
+
+    <!-- Main -->
+    <div class="main-section flex-column" id="mainContent">
+      <header class="header">
+        <h1>Contracts</h1>
+        <p>Manage rental contracts and agreements.</p>
+      </header>
+
+      <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages">
+           {% for category, message in messages %}
+           <div class="flash-message {{ category }}">{{ message }}</div>
+           {% endfor %}
+         </div>
+        {% endif %}
+        {% endwith %}
+
+       <section class="dashboard-section active">
+          <div class="card">
+            <h2>All Room Contracts</h2>
+            <p>Download existing contracts or upload / replace a new one.</p>
+          </div>
+
+          <div class="card">
+            <table class="contracts-table">
+              <thead>
+                <tr>
+                  <th>Floor</th>
+                  <th>Room Number</th>
+                  <th>Contract</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for room in rooms %}
+                  <tr>
+                    <td><span class="badge">{{ room.floor_number }}</span></td>
+                    <td><span class="badge">{{ room.room_number }}</span></td>
+
+                    <td>
+                      {% if room.contract_url %}
+                        <a href="{{ room.contract_url }}" class="btn download" target="_blank" download>
+                          Download
+                        </a>
+                      {% else %}
+                        <button class="btn download" disabled>No Contract</button>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <form action="/admin/contracts/upload"
+                            method="POST"
+                            enctype="multipart/form-data"
+                            onsubmit="return confirmReplace('{{ room.contract_url }}')">
+                        <input type="hidden" name="room_id" value="{{ room.id }}">
+                        <input type="file" name="contract_file" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <button type="submit" class="btn upload">Upload / Replace</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>&copy; 2025 Green House Hostel System</p>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    function confirmReplace(contractUrl) {
+      if (contractUrl && contractUrl !== 'None') {
+        return confirm("A contract already exists for this room/tenant. Do you want to overwrite it?");
+      }
+      return true;
+    }
+  </script>
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    sidebar.classList.toggle('collapsed');
+    if (mainContent) mainContent.classList.toggle('collapsed');
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1061 @@
+import uuid
+from mimetypes import guess_type
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from supabase_client import supabase
+import bcrypt
+from datetime import datetime
+from functools import wraps
+from flask import abort
+from flask import request
+from tenant_routes import tenant_bp  # Update this import
+from collections import defaultdict
+
+
+
+app = Flask(__name__)
+app.secret_key = "super_secret_key"
+
+app.register_blueprint(tenant_bp)
+app.jinja_env.globals.update(request=request)
+
+
+def is_superadmin():
+    return "user" in session and session["user"].get("role") == "superadmin"
+
+def superadmin_only(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not is_superadmin():
+            # You can also flash+redirect if you prefer
+            return redirect(url_for("admin_dashboard"))
+        return view(*args, **kwargs)
+    return wrapped
+
+
+
+BUCKET_NAME = "contracts"
+ALLOWED_EXTENSIONS = {"pdf", "jpg", "jpeg", "png"}
+
+
+# ---------- Helpers ----------
+def allowed_file(filename: str) -> bool:
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def upload_to_supabase_bucket(file_storage) -> str | None:
+    """
+    Upload to Supabase Storage with overwrite allowed (upsert).
+    Returns the public URL or None.
+    """
+    if not file_storage or not file_storage.filename:
+        return None
+    if not allowed_file(file_storage.filename):
+        return None
+
+    ext = file_storage.filename.rsplit(".", 1)[-1].lower()
+    unique_filename = f"{uuid.uuid4()}.{ext}"
+    path_in_bucket = f"contracts/{unique_filename}"
+
+    file_bytes = file_storage.read()
+
+    # derive a mimetype (fallback to octet-stream)
+    mimetype, _ = guess_type(file_storage.filename)
+    if not mimetype:
+        mimetype = "application/octet-stream"
+
+    # IMPORTANT: pass options as dict with string values
+    supabase.storage.from_(BUCKET_NAME).upload(
+        path_in_bucket,
+        file_bytes,
+        {
+            "content-type": mimetype,
+            "upsert": "true"      # <= make sure it's a *string*
+        }
+    )
+
+    public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(path_in_bucket)
+    return public_url
+
+
+# ---------- Auth ----------
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        password = request.form["password"]
+        role_input = request.form["role"].lower()
+
+        try:
+            if role_input in ["admin", "superadmin"]:
+                # Admin login
+                resp = (
+                    supabase.table("admins")
+                    .select("id, username, password, role, name, email")
+                    .eq("username", username)
+                    .maybe_single()
+                    .execute()
+                )
+                user = resp.data
+                if not user or user["role"].lower() != role_input:
+                    return render_template("index.html", error="Invalid credentials or role.")
+
+                if not bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
+                    return render_template("index.html", error="Invalid credentials.")
+
+                session["user"] = {
+                    "id": user["id"],
+                    "username": user["username"],
+                    "role": user["role"].lower(),
+                    "name": user.get("name"),
+                }
+                return redirect(url_for("admin_dashboard"))
+
+            elif role_input == "tenant":
+                # Tenant login
+                resp = (
+                    supabase.table("tenants")
+                    .select("id, tenants_username, tenants_password")
+                    .eq("tenants_username", username)
+                    .maybe_single()
+                    .execute()
+                )
+                user = resp.data
+                if not user:
+                    return render_template("index.html", error="Invalid tenant credentials.")
+
+                if not bcrypt.checkpw(password.encode("utf-8"), user["tenants_password"].encode("utf-8")):
+                    return render_template("index.html", error="Incorrect tenant password.")
+
+                session["user"] = {
+                    "id": user["id"],
+                    "username": user["tenants_username"],
+                    "role": "tenant",
+                }
+                return redirect(url_for("tenant.tenant_dashboard"))
+
+            else:
+                return render_template("index.html", error="Invalid role selected.")
+
+        except Exception as e:
+            print("Login error:", e)
+            return render_template("index.html", error="Login failed. Try again.")
+
+    return render_template("index.html")
+
+# ---------- Admin ----------
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    admin_id = session['user']['id']
+    suggestions = (
+        supabase.table('suggestions')
+        .select('id')
+        .execute()
+        .data or []
+    )
+    marked_rows = supabase.table('admin_read_suggestions').select('suggestion_id').eq('admin_id', admin_id).execute().data or []
+    marked = [row['suggestion_id'] for row in marked_rows]
+    new_suggestions_count = len([s for s in suggestions if s['id'] not in marked])
+
+    if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
+        return redirect("/login")
+
+    user_id = session["user"]["id"]
+
+    # Admin name
+    name_response = (
+        supabase.table("admins").select("name").eq("id", user_id).single().execute()
+    )
+    admin_name = name_response.data["name"] if name_response.data else "Admin"
+
+    # Stats
+    room_count = (
+        supabase.table("rooms").select("id", count="exact").execute().count or 0
+    )
+    tenant_count = (
+        supabase.table("tenants").select("id", count="exact").execute().count or 0
+    )
+    maintenance_count = (
+        supabase.table("maintenance").select("id", count="exact").execute().count or 0
+    )
+
+    return render_template(
+        "admin/dashboard.html",
+        admin_name=admin_name,
+        room_count=room_count,
+        tenant_count=tenant_count,
+        maintenance_count=maintenance_count,
+        new_suggestions_count=new_suggestions_count
+    )
+
+
+@app.route("/admin/rooms")
+def admin_rooms():
+    if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
+        return redirect("/login")
+
+    rooms_resp = supabase.table("rooms").select("*").execute()
+    rooms = rooms_resp.data or []
+
+    tenants_resp = (
+        supabase.table("tenants")
+        .select("id", "room_id", "tenants_name")
+        .execute()
+    )
+    tenants = tenants_resp.data or []
+
+    room_tenant_map = {t["room_id"]: t for t in tenants}
+
+    for room in rooms:
+        tenant = room_tenant_map.get(room["id"])
+        room["tenant_name"] = tenant["tenants_name"] if tenant else "N/A"
+
+        # Auto sync status
+        if tenant and room["status"] != "occupied":
+            supabase.table("rooms").update({"status": "occupied"}).eq("id", room["id"]).execute()
+            room["status"] = "occupied"
+        elif not tenant and room["status"] == "occupied":
+            supabase.table("rooms").update({"status": "available"}).eq("id", room["id"]).execute()
+            room["status"] = "available"
+
+    return render_template("admin/rooms.html", rooms=rooms)
+
+
+@app.route("/admin/tenants")
+def admin_tenants():
+    if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
+        return redirect("/login")
+
+    tenants_resp = supabase.table("tenants").select("*").execute()
+    tenants = tenants_resp.data or []
+
+    # Append room and emergency contacts
+    for tenant in tenants:
+        room = None
+        if tenant.get("room_id"):
+            room = (
+                supabase.table("rooms")
+                .select("room_number", "floor_number")
+                .eq("id", tenant["room_id"])
+                .single()
+                .execute()
+                .data
+            )
+        tenant["room_number"] = room["room_number"] if room else "-"
+        tenant["floor_number"] = room["floor_number"] if room else "-"
+
+        ec_resp = (
+            supabase.table("emergency_contacts")
+            .select("*")
+            .eq("tenant_id", tenant["id"])
+            .execute()
+        )
+        tenant["emergency_contacts"] = ec_resp.data or []
+
+    available_rooms = (
+        supabase.table("rooms")
+        .select("id", "room_number", "floor_number", "status")
+        .eq("status", "available")
+        .execute()
+        .data
+    )
+
+    return render_template(
+        "admin/tenants.html",
+        tenants=tenants,
+        available_rooms=available_rooms,
+    )
+
+
+@app.route("/admin/contracts")
+def admin_contracts():
+    if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
+        return redirect("/login")
+
+    rooms = (
+        supabase.table("rooms")
+        .select("id, room_number, floor_number")
+        .execute()
+        .data
+        or []
+    )
+    tenants = (
+        supabase.table("tenants").select("room_id", "contract_url").execute().data
+        or []
+    )
+
+    room_contracts = {
+        t["room_id"]: t["contract_url"]
+        for t in tenants
+        if t.get("contract_url")
+    }
+
+    for room in rooms:
+        room["contract_url"] = room_contracts.get(room["id"])
+
+    return render_template("admin/contracts.html", rooms=rooms)
+
+
+@app.route("/admin/contracts/upload", methods=["POST"])
+def upload_contract():
+    if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
+        return redirect("/login")
+
+    room_id = request.form.get("room_id")
+    file = request.files.get("contract_file")
+
+    if not room_id or not file or not file.filename:
+        flash("Room and file are required.", "warning")
+        return redirect(url_for("admin_contracts"))
+
+    contract_url = upload_to_supabase_bucket(file)
+    if not contract_url:
+        flash("Invalid file type or upload failed.", "warning")
+        return redirect(url_for("admin_contracts"))
+
+    # Update all tenants linked to this room with the contract URL
+    supabase.table("tenants").update({"contract_url": contract_url}).eq("room_id", room_id).execute()
+
+    flash("Contract uploaded / replaced successfully!", "success")
+    return redirect(url_for("admin_contracts"))
+
+
+
+@app.route("/admin/maintenance", methods=["GET"])
+def admin_maintenance():
+    admin_id = session['user']['id']
+    hidden_rows = supabase.table("admin_hidden_requests").select("request_id").eq("admin_id", admin_id).execute().data or []
+    hidden_ids = [row["request_id"] for row in hidden_rows]
+    requests = (
+        supabase.table('maintenance_requests')
+        .select('*')
+        .order('created_at', desc=True)
+        .execute()
+        .data or []
+    )
+    # Filter out hidden requests
+    requests = [r for r in requests if r['id'] not in hidden_ids]
+    # Fetch tenant usernames for tenant requests
+    for r in requests:
+        if not r.get("is_admin_only"):
+            tenant = supabase.table("tenants").select("tenants_username").eq("id", r["tenant_id"]).maybe_single().execute().data
+            r["tenant_username"] = tenant["tenants_username"] if tenant else "Unknown"
+    for req in requests:
+        req['created_at'] = parse_datetime(req['created_at'])
+    return render_template('admin/maintenance.html', requests=requests)
+
+@app.route('/admin/maintenance/resolve', methods=['POST'])
+def admin_maintenance_resolve():
+    req_id = request.form.get('id')
+    amount_used = request.form.get('amount_used')
+    resolved_date = request.form.get('resolved_date')
+    supabase.table('maintenance_requests').update({
+        'status': 'resolved',
+        'amount_used': amount_used,
+        'resolved_date': resolved_date
+    }).eq('id', req_id).execute()
+    flash('Request marked as resolved!', 'success')
+    return redirect(url_for('admin_maintenance'))
+
+
+
+
+@app.route('/admin/maintenance/admin_only', methods=['POST'])
+def admin_maintenance_admin_only():
+    admin_id = session['user']['id']
+    title = request.form.get('title')
+    description = request.form.get('description')
+    supabase.table('maintenance_requests').insert({
+        'admin_id': admin_id,
+        'title': title,
+        'description': description,
+        'status': 'pending',
+        'is_admin_only': True
+    }).execute()
+    flash('Admin-only maintenance added!', 'success')
+    return redirect(url_for('admin_maintenance'))
+
+from flask import render_template, request, redirect, url_for, session, flash
+from supabase_client import supabase
+from datetime import datetime
+
+def parse_datetime(dt_str):
+    try:
+        return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+    except Exception:
+        return dt_str
+
+@app.route('/admin/announcements', methods=['GET', 'POST'])
+def admin_announcements():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        message = request.form.get('message')
+        created_by = session.get('user', {}).get('id')
+        if title and message:
+            supabase.table('announcements').insert({
+                'title': title,
+                'message': message,
+                'created_by': created_by
+            }).execute()
+            flash('Announcement posted!', 'success')
+        return redirect(url_for('admin_announcements'))
+    announcements = (
+        supabase.table('announcements')
+        .select('*')
+        .order('created_at', desc=True)
+        .execute()
+        .data or []
+    )
+    for ann in announcements:
+        ann['created_at'] = parse_datetime(ann['created_at'])
+    return render_template('admin/announcements_admin.html', announcements=announcements)
+
+@app.route('/admin/announcements/delete', methods=['POST'])
+def delete_announcement():
+    ann_id = request.form.get('id')
+    if ann_id:
+        supabase.table('announcements').delete().eq('id', ann_id).execute()
+        flash('Announcement deleted!', 'success')
+    return redirect(url_for('admin_announcements'))
+
+
+@app.route('/admin/suggestions')
+def admin_suggestions():
+    admin_id = session['user']['id']
+    # Fetch hidden suggestions from DB (optional, if you persist this)
+    hidden_rows = supabase.table('admin_hidden_suggestions').select('suggestion_id').eq('admin_id', admin_id).execute().data or []
+    hidden_ids = [row['suggestion_id'] for row in hidden_rows]
+    # Fetch marked as read from DB
+    marked_rows = supabase.table('admin_read_suggestions').select('suggestion_id').eq('admin_id', admin_id).execute().data or []
+    marked = [row['suggestion_id'] for row in marked_rows]
+    suggestions = (
+        supabase.table('suggestions')
+        .select('*')
+        .order('created_at', desc=True)
+        .execute()
+        .data or []
+    )
+    suggestions = [s for s in suggestions if s['id'] not in hidden_ids]
+    for s in suggestions:
+        s['created_at'] = parse_datetime(s['created_at'])
+    return render_template('admin/suggestions_admin.html', suggestions=suggestions, admin_read_suggestions=marked)
+
+@app.route('/admin/suggestions/mark_read', methods=['POST'])
+def mark_suggestion_read_admin():
+    sug_id = request.form.get('id')
+    admin_id = session['user']['id']
+    if sug_id:
+        supabase.table('admin_read_suggestions').upsert({
+            'admin_id': admin_id,
+            'suggestion_id': sug_id
+        }).execute()
+    return redirect(url_for('admin_suggestions'))
+
+@app.route('/admin/suggestions/delete', methods=['POST'])
+def delete_suggestion_admin():
+    sug_id = request.form.get('id')
+    admin_id = session['user']['id']
+    if sug_id:
+        # Hide in DB
+        supabase.table('admin_hidden_suggestions').upsert({
+            'admin_id': admin_id,
+            'suggestion_id': sug_id
+        }).execute()
+        # Mark as read in DB
+        supabase.table('admin_read_suggestions').upsert({
+            'admin_id': admin_id,
+            'suggestion_id': sug_id
+        }).execute()
+    flash('Suggestion hidden from your view!', 'success')
+    return redirect(url_for('admin_suggestions'))
+
+@app.route('/admin/suggestions/clear', methods=['POST'])
+def clear_suggestions_admin():
+    admin_id = session['user']['id']
+    suggestions = (
+        supabase.table('suggestions')
+        .select('id')
+        .execute()
+        .data or []
+    )
+    for s in suggestions:
+        # Hide in DB
+        supabase.table('admin_hidden_suggestions').upsert({
+            'admin_id': admin_id,
+            'suggestion_id': s['id']
+        }).execute()
+        # Mark as read in DB
+        supabase.table('admin_read_suggestions').upsert({
+            'admin_id': admin_id,
+            'suggestion_id': s['id']
+        }).execute()
+    flash('All suggestions hidden from your view!', 'success')
+    return redirect(url_for('admin_suggestions'))
+
+
+# ---------- Logout ----------
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
+
+
+# ---------- Rooms: Edit ----------
+@app.route("/admin/rooms/edit", methods=["POST"])
+def edit_room_status():
+    if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
+        return redirect("/login")
+
+    room_id = request.form["room_id"]
+    new_status = request.form["status"]
+    new_room_number = request.form["room_number"]
+    new_condition = request.form["condition"]
+
+    supabase.table("rooms").update(
+        {
+            "status": new_status,
+            "room_number": new_room_number,
+            "condition": new_condition,
+        }
+    ).eq("id", room_id).execute()
+
+    flash("Room updated!", "success")
+    return redirect(url_for("admin_rooms"))
+
+
+# ---------- Tenants: Add ----------
+@app.route("/admin/tenants/add", methods=["POST"])
+def add_tenant():
+    username = request.form.get('tenants_username')
+    # Check in tenants table
+    tenant_exists = supabase.table('tenants').select('id').eq('tenants_username', username).execute().data
+    # Check in admins table
+    admin_exists = supabase.table('admins').select('id').eq('username', username).execute().data
+
+    if tenant_exists or admin_exists:
+        flash('Username already exists. Please choose a different one.', 'error')
+        return redirect(url_for('admin_rooms'))
+
+    data = request.form
+    contract_url = upload_to_supabase_bucket(request.files.get("contract_url"))
+
+    # Hash password
+    hashed_password = bcrypt.hashpw(
+        data["tenants_password"].encode("utf-8"), bcrypt.gensalt()
+    ).decode("utf-8")
+
+    tenant_resp = (
+        supabase.table("tenants")
+        .insert(
+            {
+                "tenants_name": data["tenants_name"],
+                "tenants_phone1": data["tenants_phone1"],
+                "tenants_phone2": data.get("tenants_phone2", ""),
+                "tenants_email": data["tenants_email"],
+                "tenants_username": data["tenants_username"],
+                "tenants_password": hashed_password,
+                "national_id": data["national_id"],
+                "contract_url": contract_url,
+                "check_in": data["check_in"],
+                "check_out": data["check_out"],
+                "room_id": data["room_id"],
+                "created_at": datetime.utcnow().isoformat(),
+            }
+        )
+        .execute()
+    )
+    tenant_id = tenant_resp.data[0]["id"]
+
+    # Set room occupied
+    supabase.table("rooms").update({"status": "occupied"}).eq("id", data["room_id"]).execute()
+
+    # Emergency contacts
+    supabase.table("emergency_contacts").insert(
+        [
+            {
+                "tenant_id": tenant_id,
+                "emergency_contact_name": data["emergency_contact_name1"],
+                "emergency_contact_phone": data["emergency_contact_phone1"],
+                "relation": data["emergency_relation1"],
+            },
+            {
+                "tenant_id": tenant_id,
+                "emergency_contact_name": data["emergency_contact_name2"],
+                "emergency_contact_phone": data["emergency_contact_phone2"],
+                "relation": data["emergency_relation2"],
+            },
+        ]
+    ).execute()
+
+    flash("Tenant added successfully!", "success")
+    return redirect(url_for("admin_rooms"))
+
+
+# ---------- Tenants: Delete ----------
+@app.route("/admin/tenants/delete/<tenant_id>", methods=["POST"])
+def delete_tenant(tenant_id):
+    if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
+        return redirect("/login")
+
+    tenant = (
+        supabase.table("tenants")
+        .select("room_id")
+        .eq("id", tenant_id)
+        .single()
+        .execute()
+        .data
+    )
+    room_id = tenant["room_id"] if tenant else None
+
+    # Get all suggestion IDs for this tenant
+    suggestions = supabase.table("suggestions").select("id").eq("tenant_id", tenant_id).execute().data or []
+    suggestion_ids = [s["id"] for s in suggestions]
+
+    # Delete from all related tables for each suggestion
+    for sug_id in suggestion_ids:
+        supabase.table("tenant_hidden_suggestions").delete().eq("suggestion_id", sug_id).execute()
+        supabase.table("admin_read_suggestions").delete().eq("suggestion_id", sug_id).execute()
+        supabase.table("admin_hidden_suggestions").delete().eq("suggestion_id", sug_id).execute()
+
+    # Now safe to delete suggestions
+    supabase.table("suggestions").delete().eq("tenant_id", tenant_id).execute()
+    supabase.table("emergency_contacts").delete().eq("tenant_id", tenant_id).execute()
+    supabase.table("tenants").delete().eq("id", tenant_id).execute()
+
+    if room_id:
+        supabase.table("rooms").update({"status": "available"}).eq("id", room_id).execute()
+
+    flash("Tenant deleted and room set to available.", "success")
+    return redirect(url_for("admin_tenants"))
+
+
+# ---------- Tenants: Edit (upload new contract) ----------
+@app.route("/admin/tenants/edit", methods=["POST"])
+def edit_tenant():
+    tenant_id = request.form.get("tenant_id")
+    username = request.form.get("tenants_username")
+    national_id = request.form.get("national_id", "")
+    # Check for unique username (exclude current tenant)
+    tenant_exists = (
+        supabase.table('tenants')
+        .select('id')
+        .eq('tenants_username', username)
+        .neq('id', tenant_id)
+        .execute()
+        .data
+    )
+    admin_exists = (
+        supabase.table('admins')
+        .select('id')
+        .eq('username', username)
+        .execute()
+        .data
+    )
+    if tenant_exists or admin_exists:
+        flash('Username already exists. Please choose a different one.', 'error')
+        return redirect(url_for('admin_tenants'))
+
+    # Prepare update fields
+    update_fields = {
+        "tenants_phone1": request.form.get("tenants_phone1"),
+        "tenants_phone2": request.form.get("tenants_phone2", ""),
+        "tenants_email": request.form.get("tenants_email"),
+        "national_id": national_id,
+        "check_in": request.form.get("check_in"),
+        "check_out": request.form.get("check_out"),
+        "room_id": request.form.get("room_id"),
+    }
+
+    file = request.files.get("contract_url")
+    if file and file.filename:
+        contract_url = upload_to_supabase_bucket(file)
+        if contract_url:
+            update_fields["contract_url"] = contract_url
+
+    # Actually update the tenant
+    resp = supabase.table("tenants").update(update_fields).eq("id", tenant_id).execute()
+
+    # --- Emergency Contacts Update ---
+    ec1_name = request.form.get("emergency_contact_name1")
+    ec1_phone = request.form.get("emergency_contact_phone1")
+    ec1_relation = request.form.get("emergency_relation1")
+    ec2_name = request.form.get("emergency_contact_name2")
+    ec2_phone = request.form.get("emergency_contact_phone2")
+    ec2_relation = request.form.get("emergency_relation2")
+
+    # Fetch existing emergency contacts for this tenant
+    existing_ecs = (
+        supabase.table("emergency_contacts")
+        .select("id")
+        .eq("tenant_id", tenant_id)
+        .execute()
+        .data or []
+    )
+
+    # Update or insert the first contact
+    if len(existing_ecs) > 0:
+        supabase.table("emergency_contacts").update({
+            "emergency_contact_name": ec1_name,
+            "emergency_contact_phone": ec1_phone,
+            "relation": ec1_relation
+        }).eq("id", existing_ecs[0]["id"]).execute()
+    else:
+        supabase.table("emergency_contacts").insert({
+            "tenant_id": tenant_id,
+            "emergency_contact_name": ec1_name,
+            "emergency_contact_phone": ec1_phone,
+            "relation": ec1_relation
+        }).execute()
+
+    # Update or insert the second contact
+    if len(existing_ecs) > 1:
+        supabase.table("emergency_contacts").update({
+            "emergency_contact_name": ec2_name,
+            "emergency_contact_phone": ec2_phone,
+            "relation": ec2_relation
+        }).eq("id", existing_ecs[1]["id"]).execute()
+    else:
+        supabase.table("emergency_contacts").insert({
+            "tenant_id": tenant_id,
+            "emergency_contact_name": ec2_name,
+            "emergency_contact_phone": ec2_phone,
+            "relation": ec2_relation
+        }).execute()
+
+    if resp.data:
+        flash("Tenant info updated successfully!", "success")
+    else:
+        flash("No changes made or update failed.", "error")
+    return redirect(url_for("admin_tenants"))
+
+
+# ---------- Tenants: Shift Room ----------
+@app.route("/admin/tenants/shift_room", methods=["POST"])
+def shift_tenant_room():
+    tenant_id = request.form.get("tenant_id")
+    new_room_id = request.form.get("room_id")
+    if not tenant_id or not new_room_id:
+        flash("Missing tenant or room information.", "error")
+        return redirect(url_for("admin_tenants"))
+
+    # Optionally fetch room details for updating tenant's floor/room_number
+    room = (
+        supabase.table("rooms")
+        .select("room_number", "floor_number")
+        .eq("id", new_room_id)
+        .maybe_single()
+        .execute()
+        .data
+    )
+
+    update_fields = {"room_id": new_room_id}
+    if room:
+        update_fields["room_number"] = room.get("room_number")
+        update_fields["floor_number"] = room.get("floor_number")
+
+    resp = (
+        supabase.table("tenants")
+        .update(update_fields)
+        .eq("id", tenant_id)
+        .execute()
+    )
+    if resp.data:
+        flash("Tenant shifted to new room successfully!", "success")
+    else:
+        flash("Failed to shift tenant room.", "error")
+    return redirect(url_for("admin_tenants"))
+
+
+@app.route("/admin/admins")
+@superadmin_only
+def admin_admins():
+    if "user" not in session or session["user"]["role"] != "superadmin":
+        return redirect("/login")
+
+    try:
+        response = supabase.table("admins").select("*").execute()
+        admins = response.data if response.data else []
+    except Exception as e:
+        print("Error fetching admins:", e)
+        admins = []
+
+    return render_template("admin/admins.html", admins=admins)
+
+@app.route("/admin/admins/create", methods=["POST"])
+@superadmin_only
+def create_admin():
+    if "user" not in session or session["user"]["role"] != "superadmin":
+        return redirect("/login")
+
+    name = request.form.get("name")
+    username = request.form.get("username")
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    if not all([name, username, email, password]):
+        flash("All fields are required.", "error")
+        return redirect(url_for("admin_admins"))
+
+    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    try:
+        supabase.table("admins").insert({
+            "name": name,
+            "username": username,
+            "email": email,
+            "password": hashed_password,
+            "role": "admin"
+        }).execute()
+        flash(f"Admin '{username}' created successfully!", "success")
+    except Exception as e:
+        print("Error creating admin:", e)
+        flash("Failed to create admin. Username or email may already exist.", "error")
+
+    return redirect(url_for("admin_admins"))
+
+
+@app.route("/admin/admins/reset_password", methods=["POST"])
+@superadmin_only
+def reset_admin_password():
+    if "user" not in session or session["user"]["role"] != "superadmin":
+        return redirect("/login")
+
+    admin_id = request.form.get("admin_id")
+    new_password = request.form.get("new_password")
+
+    if not admin_id or not new_password:
+        flash("Admin ID and new password are required.", "error")
+        return redirect(url_for("admin_admins"))
+
+    hashed_password = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    try:
+        supabase.table("admins").update({"password": hashed_password}).eq("id", admin_id).execute()
+        flash("Password reset successfully!", "success")
+    except Exception as e:
+        print("Error resetting password:", e)
+        flash("Failed to reset password.", "error")
+
+    return redirect(url_for("admin_admins"))
+
+
+@app.route("/admin/admins/delete", methods=["POST"])
+@superadmin_only
+def delete_admin():
+    if "user" not in session or session["user"]["role"] != "superadmin":
+        return redirect("/login")
+
+    admin_id = request.form.get("admin_id")
+    if not admin_id:
+        flash("Invalid admin ID.", "error")
+        return redirect(url_for("admin_admins"))
+
+    try:
+        supabase.table("admins").delete().eq("id", admin_id).execute()
+        flash("Admin deleted successfully.", "success")
+    except Exception as e:
+        print("Error deleting admin:", e)
+        flash("Failed to delete admin.", "error")
+
+    return redirect(url_for("admin_admins"))
+
+@app.route("/admin/admins/reset_own_password", methods=["POST"])
+def reset_own_password():
+    if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
+        return redirect("/login")
+
+    current_password = request.form.get("current_password")
+    new_password = request.form.get("new_password")
+
+    if not current_password or not new_password:
+        flash("Both current and new passwords are required.", "error")
+        return redirect(url_for("admin_admins"))
+
+    try:
+        user = supabase.table("admins").select("*").eq("id", session["user"]["id"]).single().execute().data
+        if user and bcrypt.checkpw(current_password.encode("utf-8"), user["password"].encode("utf-8")):
+            hashed_password = bcrypt.hashpw(new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+            supabase.table("admins").update({"password": hashed_password}).eq("id", user["id"]).execute()
+            flash("Your password has been updated!", "success")
+        else:
+            flash("Current password is incorrect.", "error")
+    except Exception as e:
+        print("Error resetting own password:", e)
+        flash("Failed to reset password.", "error")
+
+    return redirect(url_for("admin_admins"))
+
+
+
+
+# ---------- Tenant ----------
+
+
+def parse_datetime(dt_str):
+    try:
+        # Handles both with and without timezone
+        return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
+    except Exception:
+        return dt_str
+
+@app.route('/admin/transactions', methods=['GET'])
+def admin_transactions():
+    tenant_id = request.args.get('tenant_id')
+    transaction_id = request.args.get('transaction_id')
+    query = supabase.table('transactions').select('*').order('created_at', desc=True)
+    if tenant_id:
+        query = query.eq('tenant_id', tenant_id)
+    if transaction_id:
+        query = query.eq('id', transaction_id)
+    transactions = query.execute().data or []
+    return render_template('admin/transactions.html', transactions=transactions)
+
+@app.route('/admin/transactions/add', methods=['POST'])
+def add_transaction():
+    floor_number = request.form.get('floor_number')
+    room_number = request.form.get('room_number')
+    tenant_name = request.form.get('tenant_name')
+    required_amount = request.form.get('required_amount')
+    submitted_amount = request.form.get('submitted_amount')
+    check_in = request.form.get('check_in')
+    check_out = request.form.get('check_out')
+
+    # Find tenant_id by tenant_name (optional: you can use tenant_id directly if you prefer)
+    tenant_resp = (
+        supabase.table('tenants')
+        .select('id')
+        .eq('tenants_name', tenant_name)
+        .maybe_single()
+        .execute()
+    )
+    tenant_id = tenant_resp.data['id'] if tenant_resp.data else None
+
+    supabase.table('transactions').insert({
+        'tenant_id': tenant_id,
+        'floor_number': floor_number,
+        'room_number': room_number,
+        'tenant_name': tenant_name,
+        'required_amount': required_amount,
+        'submitted_amount': submitted_amount,
+        'check_in': check_in,
+        'check_out': check_out
+    }).execute()
+    flash('Transaction added!', 'success')
+    return redirect(url_for('admin_transactions'))
+
+@app.route('/admin/transactions/edit', methods=['POST'])
+def edit_transaction():
+    trans_id = request.form.get('id')
+    required_amount = request.form.get('required_amount')
+    submitted_amount = request.form.get('submitted_amount')
+    check_in = request.form.get('check_in')
+    check_out = request.form.get('check_out')
+
+    supabase.table('transactions').update({
+        'required_amount': required_amount,
+        'submitted_amount': submitted_amount,
+        'check_in': check_in,
+        'check_out': check_out
+    }).eq('id', trans_id).execute()
+    flash('Transaction updated!', 'success')
+    return redirect(url_for('admin_transactions'))
+
+@app.route('/admin/proofs', methods=['GET'])
+def admin_proofs():
+    proofs = (
+        supabase.table('transaction_proofs')
+        .select('*')
+        .order('created_at', desc=True)
+        .execute()
+        .data or []
+    )
+    return render_template('admin/proofs.html', proofs=proofs)
+
+@app.route('/admin/proofs/approve', methods=['POST'])
+def admin_proofs_approve():
+    proof_id = request.form.get('id')
+    if proof_id:
+        supabase.table('transaction_proofs').update({'status': 'approved'}).eq('id', proof_id).execute()
+        flash('Proof approved!', 'success')
+    return redirect(url_for('admin_proofs'))
+
+@app.route('/admin/proofs/reject', methods=['POST'])
+def admin_proofs_reject():
+    proof_id = request.form.get('id')
+    if proof_id:
+        supabase.table('transaction_proofs').update({'status': 'rejected'}).eq('id', proof_id).execute()
+        flash('Proof rejected!', 'success')
+    return redirect(url_for('admin_proofs'))
+
+@app.route('/admin/finance')
+def admin_finance():
+    # Fetch all transactions and maintenance requests
+    transactions = (
+        supabase.table('transactions')
+        .select('id, required_amount, submitted_amount, created_at')
+        .execute()
+        .data or []
+    )
+    maints = (
+        supabase.table('maintenance_requests')
+        .select('id, amount_used, resolved_date, status')
+        .eq('status', 'resolved')
+        .execute()
+        .data or []
+    )
+
+    # Group by month
+    monthly_income = defaultdict(float)
+    monthly_maintenance = defaultdict(float)
+
+    for t in transactions:
+        month = t['created_at'][:7]  # 'YYYY-MM'
+        monthly_income[month] += float(t.get('submitted_amount') or 0)
+
+    for m in maints:
+        if m.get('resolved_date'):
+            month = m['resolved_date'][:7]
+            monthly_maintenance[month] += float(m.get('amount_used') or 0)
+
+    # Prepare summary
+    months = sorted(set(list(monthly_income.keys()) + list(monthly_maintenance.keys())))
+    summary = []
+    for month in months:
+        income = monthly_income.get(month, 0)
+        maintenance = monthly_maintenance.get(month, 0)
+        net = income - maintenance
+        summary.append({
+            'month': month,
+            'income': income,
+            'maintenance': maintenance,
+            'net': net
+        })
+
+    return render_template('admin/finance.html', summary=summary)
+
+@app.route('/admin/uploads', methods=['GET'])
+def admin_uploads():
+    proofs = (
+        supabase.table('transaction_proofs')
+        .select('*')
+        .order('created_at', desc=True)
+        .execute()
+        .data or []
+    )
+    return render_template('admin/proofs.html', proofs=proofs)
+
+@app.route("/admin/maintenance/hide/<req_id>", methods=["POST"])
+def admin_hide_maintenance(req_id):
+    admin_id = session['user']['id']
+    supabase.table("admin_hidden_requests").upsert({
+        "admin_id": admin_id,
+        "request_id": req_id
+    }).execute()
+    flash("Request hidden from your dashboard.", "success")
+    return redirect(url_for("admin_maintenance"))
+
+if __name__ == "__main__":
+    app.run(debug=True)

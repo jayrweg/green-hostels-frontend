@@ -1,0 +1,12 @@
+.transaction-list { list-style: none; padding: 0; }
+.transaction-list li {
+  background: #f8f8f8;
+  border-radius: 10px;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+  padding: 1.2rem 1rem;
+  border-left: 5px solid #388e3c;
+  transition: box-shadow 0.2s;
+}
+.transaction-complete { border-left-color: #1976d2; background: #e3f2fd; }
+.trans-room, .trans-amounts, .trans-dates { margin-bottom: 0.5rem; }

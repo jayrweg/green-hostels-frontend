@@ -1,0 +1,266 @@
+/* ========== Room Table Styles ========== */
+.room-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.room-table thead {
+  background-color: #2e7d32; /* main green */
+  color: #fff;
+}
+
+.room-table th,
+.room-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+
+/* ========== Floor Styling ========== */
+.floor {
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 0.85rem;
+}
+
+.floor.ground {
+  background-color: #e3f2fd;
+  color: #1565c0;
+  border: 1px solid #1565c0;
+}
+
+.floor.first {
+  background-color: #fce4ec;
+  color: #ad1457;
+  border: 1px solid #ad1457;
+}
+
+.floor.second {
+  background-color: #f3e5f5;
+  color: #6a1b9a;
+  border: 1px solid #6a1b9a;
+}
+
+/* ========== Room Number Styling ========== */
+.room-number {
+  font-weight: 600;
+  color: #2e7d32;
+  background-color: #e8f5e9;
+  border: 1px solid #2e7d32;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 0.85rem;
+}
+
+
+
+.room-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+/* ========== Status Styling ========== */
+.status {
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 0.85rem;
+}
+
+.status.available {
+  background-color: #e6f4ea;
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+}
+
+.status.occupied {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #c62828;
+}
+
+/* ========== Condition Styling ========== */
+.condition {
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  font-size: 0.85rem;
+}
+
+.condition.good {
+  background-color: #e8f5e9;
+  color: #388e3c;
+  border: 1px solid #388e3c;
+}
+
+.condition.needs-maintainance {
+  background-color: #fff3e0;
+  color: #ef6c00;
+  border: 1px solid #ef6c00;
+}
+
+/* ========== Action Buttons ========== */
+.btn {
+  text-decoration: none;
+  padding: 6px 12px;
+  margin-right: 6px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background-color 0.3s;
+  display: inline-block;
+}
+
+.btn.edit {
+  background-color: #f9fbe7;
+  color: #827717;
+  border: 1px solid #cddc39;
+}
+
+.btn.edit:hover {
+  background-color: #f0f4c3;
+}
+
+.btn.delete {
+  background-color: #ffebee;
+  color: #b71c1c;
+  border: 1px solid #ef9a9a;
+}
+
+.btn.delete:hover {
+  background-color: #ffcdd2;
+}
+
+/* Add Tenant button */
+.btn.add {
+  background-color: #4caf50;
+  color: #fff;
+  border: 1px solid #388e3c;
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-weight: 600;
+  margin-left: 5px;
+  transition: background 0.2s;
+}
+.btn.add:hover {
+  background-color: #388e3c;
+}
+
+/* ========== Card Styling ========== */
+.card {
+  background-color: #ffffff;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  margin-top: 0;
+  color: #2e7d32;
+}
+
+.card p {
+  color: #555;
+}
+
+/* ========== Table Wrapper (Responsive) ========== */
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* ========== Footer Styling ========== */
+.dashboard-footer {
+  background-color: #f9f9f9;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: auto;
+  border-top: 1px solid #ddd;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* ========== Modal styling (shared) */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.3);
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.modal form {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  min-width: 300px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 900px) {
+  .modal form {
+    padding: 1rem;
+    min-width: 0;
+  }
+}
+
+/* ========== Mobile Responsive ========== */
+@media (max-width: 768px) {
+  .room-table th,
+  .room-table td {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .btn {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+  }
+
+  /* Gold badge for Room Numbers on mobile */
+  .room-number {
+    background-color: #ffd700; /* Gold */
+    color: #7c6500;
+    border: 1px solid #e6be00;
+  }
+
+  /* Colored badge for Floor Numbers on mobile */
+  .floor.ground {
+    background-color: #cd7f32; /* Bronze */
+    color: #fff;
+    border: 1px solid #b87333;
+  }
+  .floor.first {
+    background-color: #ffd700; /* Gold */
+    color: #7c6500;
+    border: 1px solid #e6be00;
+  }
+  .floor.second {
+    background-color: #c0c0c0; /* Silver */
+    color: #555;
+    border: 1px solid #b0b0b0;
+  }
+
+  .card h2 {
+    font-size: 1.1rem;
+  }
+}

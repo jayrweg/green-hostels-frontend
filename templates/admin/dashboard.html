@@ -1,0 +1,85 @@
+<!-- admin_dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Green House</title>
+
+  <!-- CSS Files -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/buttons.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  <link rel="stylesheet" href="/static/css/admin_sidebar.css">
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+
+    <!-- Admin Sidebar -->
+    {% include 'admin/admin_sidebar.html' %}
+
+    <!-- Main Section -->
+    <div class="main-section flex-column" id="mainContent">
+
+      <!-- Header -->
+      <header class="dashboard-header">
+        <div class="welcome-msg">
+          <h1>Welcome, {{ admin_name }}</h1>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <section class="dashboard-section active">
+  <div class="card-grid">
+    <div class="card">
+      <h3>Total Rooms</h3>
+      <p>{{ room_count }}</p>
+    </div>
+    <div class="card">
+      <h3>Total Tenants</h3>
+      <p>{{ tenant_count }}</p>
+    </div>
+
+    <div class="card">
+      <h3>Maintenance Requests</h3>
+      <p>{{ maintenance_count }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="dashboard-section">
+  <div class="dashboard-card new-suggestions-card">
+    <div class="card-title">New Suggestions</div>
+    <div class="card-value">{{ new_suggestions_count }}</div>
+  </div>
+</section>
+
+      </main>
+
+      <!-- Footer -->
+      <footer class="dashboard-footer">
+        <p>&copy; 2025 Green House System. All rights reserved.</p>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
+  <script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    sidebar.classList.toggle('collapsed');
+    if (mainContent) mainContent.classList.toggle('collapsed');
+  }
+</script>
+</body>
+</html>

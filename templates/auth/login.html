@@ -1,0 +1,54 @@
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcrypt');
+const supabase = require('../models/db');
+
+// LOGIN: Try tenant first, then admin
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  // Try tenants table
+  const { data: tenant, error: tErr } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('username', username)
+    .single();
+
+  if (tenant && await bcrypt.compare(password, tenant.password)) {
+    return res.json({
+      message: 'Login successful',
+      role: 'tenant',
+      user: {
+        id: tenant.id,
+        name: tenant.name,
+        username: tenant.username,
+        room: tenant.room,
+        status: tenant.status
+      }
+    });
+  }
+
+  // Try admins table
+  const { data: admin, error: aErr } = await supabase
+    .from('admins')
+    .select('*')
+    .eq('username', username)
+    .single();
+
+  if (admin && await bcrypt.compare(password, admin.password)) {
+    return res.json({
+      message: 'Login successful',
+      role: 'admin',
+      user: {
+        id: admin.id,
+        name: admin.name,
+        username: admin.username,
+        role: admin.role
+      }
+    });
+  }
+
+  res.status(401).json({ error: 'Invalid credentials' });
+});
+
+module.exports = router;

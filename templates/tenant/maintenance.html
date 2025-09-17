@@ -1,0 +1,50 @@
+<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\tenant\maintenance.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Maintenance & Requests</title>
+   <link rel="stylesheet" href="/static/css/sidebar.css">
+  <link rel="stylesheet" href="/static/css/tenant_maintenance.css" />
+
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+    {% include 'tenant/sidebar.html' %}
+    <div class="main-section">
+      <h1>Report Maintenance Issue</h1>
+      <form method="POST" action="/tenant/maintenance">
+        <input type="text" name="title" placeholder="Issue Title" required>
+        <textarea name="description" placeholder="Describe the issue..." required></textarea>
+        <button type="submit">Submit Request</button>
+      </form>
+      <h2>Your Requests</h2>
+      <div class="maintenance-list">
+        {% for req in requests %}
+          <div class="maintenance-card">
+            <div>
+              <strong>{{ req.title }}</strong>
+              <span class="request-date">{{ req.created_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+            <div>{{ req.description }}</div>
+            <form method="POST" action="/tenant/maintenance/hide/{{ req.id }}" style="display:inline;">
+              <button type="submit" class="btn delete" onclick="return confirm('Hide this request from your dashboard?')">Delete</button>
+           </form>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+<script>
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('collapsed');
+  var mainSection = document.querySelector('.main-section');
+  if (mainSection) {
+    mainSection.classList.toggle('expanded');
+  }
+}
+</script>
+
+</body>
+</html>

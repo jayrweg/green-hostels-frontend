@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tenants - Green House Admin</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/tenants.css" />
+  <link rel="stylesheet" href="/static/css/admin_sidebar.css">
+</head>
+<body>
+  <div class="dashboard-wrapper flex">
+
+    {% include 'admin/admin_sidebar.html' %}
+
+    <div class="main-section flex-column" id="mainContent">
+      <div class="content-box">
+        <header class="dashboard-header">
+          <h1>Tenants</h1>
+        </header>
+        <main class="main-content">
+          <div class="tenants-cards-container">
+            {% for tenant in tenants %}
+            <div class="tenant-card" tabindex="0" onclick="toggleTenantDetails(this)">
+              <div class="tenant-card-front">
+                <img src="{{ tenant.profile_picture or url_for('static', filename='images/default-avatar.png') }}" alt="Profile Picture" class="tenant-profile-pic">
+                <span class="tenant-username">{{ tenant.tenants_username }}</span>
+                <div class="tenant-room-info">
+                  Room: <strong>{{ tenant.room_number }}</strong> | Floor: <strong>{{ tenant.floor_number }}</strong>
+                </div>
+              </div>
+              <div class="tenant-card-details">
+                <div><strong>Name:</strong> {{ tenant.tenants_name }}</div>
+  
+                <div><strong>Phone 1:</strong> {{ tenant.tenants_phone1 }}</div>
+                <div><strong>Phone 2:</strong> {{ tenant.tenants_phone2 or '-' }}</div>
+                <div><strong>Email:</strong> {{ tenant.tenants_email }}</div>
+                <div><strong>National ID:</strong> {{ tenant.national_id }}</div>
+                <div><strong>Check In:</strong> {{ tenant.check_in }}</div>
+                <div><strong>Check Out:</strong> {{ tenant.check_out }}</div>
+                <div><strong>Contract:</strong>
+                  {% if tenant.contract_url %}
+                    <a href="{{ tenant.contract_url }}" target="_blank">View</a>
+                  {% else %}
+                    -
+                  {% endif %}
+                </div>
+                <div><strong>Emergency Contacts:</strong>
+                  <ul class="emergency-list">
+                    {% for ec in tenant.emergency_contacts %}
+                      <li>{{ ec.emergency_contact_name }} ({{ ec.relation }}, {{ ec.emergency_contact_phone }})</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                <div class="tenant-card-actions">
+                  <button type="button" class="btn edit" onclick='openEditTenantModal({{ tenant | tojson | safe }})'>Edit</button>
+                  <!-- <button type="button" class="btn shift" onclick="openShiftRoomModal({{ tenant.id }})">Shift Room</button> -->
+                  <form method="POST" action="/admin/tenants/delete/{{ tenant.id }}" style="display:inline;">
+                    <button type="submit" class="btn delete" onclick="return confirm('Delete this tenant?')">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </main>
+      </div>
+      <footer class="footer">
+        <p>&copy; 2025 Green House. All rights reserved.</p>
+      </footer>
+    </div>
+  </div>
+  <script>
+    function toggleTenantDetails(card) {
+      card.classList.toggle('expanded');
+    }
+  </script>
+
+  <!-- Edit Tenant Modal -->
+<div id="editTenantModal" class="modal" style="display:none;">
+  <div>
+    <form method="POST" action="/admin/tenants/edit" enctype="multipart/form-data" id="editTenantForm">
+      <input type="hidden" name="tenant_id" id="editTenantId">
+      <label>Phone 1:</label>
+      <input type="text" name="tenants_phone1" id="editTenantsPhone1" required>
+      <label>Phone 2:</label>
+      <input type="text" name="tenants_phone2" id="editTenantsPhone2">
+      <label>Email:</label>
+      <input type="email" name="tenants_email" id="editTenantsEmail" required>
+      <label>Password:</label>
+      <input type="password" name="tenants_password" id="editTenantsPassword" placeholder="Leave blank to keep current">
+      <label>National ID:</label>
+      <input type="text" name="national_id" id="editNationalId">
+      <label>Contract (optional):</label>
+      <input type="file" name="contract_url" accept=".pdf,.jpg,.jpeg,.png">
+      <label>Check In:</label>
+      <input type="date" name="check_in" id="editCheckIn" required>
+      <label>Check Out:</label>
+      <input type="date" name="check_out" id="editCheckOut" required>
+      <hr style="margin:1rem 0;">
+      <label>Emergency Contact 1 Full Name:</label>
+      <input type="text" name="emergency_contact_name1" id="editEmergencyContactName1" required>
+      <label>Emergency Contact 1 Phone:</label>
+      <input type="text" name="emergency_contact_phone1" id="editEmergencyContactPhone1" required>
+      <label>Emergency Contact 1 Relation:</label>
+      <input type="text" name="emergency_relation1" id="editEmergencyRelation1" required>
+      <label>Emergency Contact 2 Full Name:</label>
+      <input type="text" name="emergency_contact_name2" id="editEmergencyContactName2" required>
+      <label>Emergency Contact 2 Phone:</label>
+      <input type="text" name="emergency_contact_phone2" id="editEmergencyContactPhone2" required>
+      <label>Emergency Contact 2 Relation:</label>
+      <input type="text" name="emergency_relation2" id="editEmergencyRelation2" required>
+     <input type="hidden" name="room_id" id="editRoomId">
+      <div style="margin-top:1rem;">
+        <button type="submit" class="btn edit">Save</button>
+        <button type="button" class="btn delete" onclick="closeEditTenantModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Shift Room Modal -->
+<div id="shiftRoomModal" class="modal" style="display:none;">
+  <div>
+    <form method="POST" action="/admin/tenants/shift_room" id="shiftRoomForm">
+      <input type="hidden" name="tenant_id" id="shiftTenantId">
+      <input type="hidden" name="room_id" id="editRoomId">
+      <label>Select New Room:</label>
+      <select name="room_id" id="shiftRoomSelect" required>
+        {% for room in available_rooms %}
+          <option value="{{ room.id }}">{{ room.room_number }} (Floor {{ room.floor_number }})</option>
+        {% endfor %}
+      </select>
+      <div style="margin-top:1rem;">
+        <button type="submit" class="btn shift">Shift</button>
+        <button type="button" class="btn delete" onclick="closeShiftRoomModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="flash-message {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<script src="/static/js/tenants.js"></script>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+    sidebar.classList.toggle('collapsed');
+    if (mainContent) mainContent.classList.toggle('collapsed');
+  }
+</script>
+
+</body>
+</html>

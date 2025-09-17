@@ -1,0 +1,20 @@
+.proof-list { list-style: none; padding: 0; }
+.proof-list li {
+  background: #f8f8f8;
+  border-radius: 10px;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 2px 8px rgba(44,62,80,0.08);
+  padding: 1.2rem 1rem;
+  border-left: 5px solid #388e3c;
+}
+.proof-pending { border-left-color: #fbc02d; }
+.proof-approved { border-left-color: #388e3c; background: #e6f9ec; }
+.proof-rejected { border-left-color: #e53935; background: #ffebee; }
+.proof-message { font-weight: bold; }
+.proof-status { margin-top: 0.5rem; color: #888; }
+.proof-file a { color: #1976d2; text-decoration: underline; }
+.proof-date { font-size: 0.95rem; color: #888; }
+.proof-form { margin-bottom: 2rem; }
+select, input[type="file"], textarea { width: 100%; margin-bottom: 0.7rem; padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; }
+button { background: #388e3c; color: #fff; border: none; border-radius: 6px; padding: 0.5rem 1.2rem; cursor: pointer; }
+button:hover { background: #257942; }
