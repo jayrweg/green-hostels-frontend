@@ -1,9 +1,11 @@
 <!-- includes/header.html -->
-<header class="tenant-header">
-  <h1>Welcome, {{ user_name }}</h1>
-  {% if user_role == 'tenant' %}
-    <p>Room {{ user_room }} - Contract until {{ contract_end }}</p>
-  {% else %}
-    <p>Manage Green House operations</p>
-  {% endif %}
+<header class="dashboard-header">
+  <div>
+    <h1>{% if user_role == 'tenant' %}Welcome, {{ user_name }}{% else %}Green House Admin{% endif %}</h1>
+    {% if user_role == 'tenant' %}
+      <p class="sub">Room {{ user_room }}{% if contract_end %} · Contract until {{ contract_end }}{% endif %}</p>
+    {% else %}
+      <p class="sub">Manage Green House operations</p>
+    {% endif %}
+  </div>
 </header>

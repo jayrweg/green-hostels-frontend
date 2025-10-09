@@ -1,61 +1,92 @@
-<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\finance.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Finance - Admin</title>
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/admin_finance.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-    <div class="main-section">
-      <h1>Finance Overview</h1>
-      <div class="finance-cards">
-        {% for m in summary %}
-        <div class="finance-card">
-          <div class="finance-month">{{ m.month }}</div>
-          <div class="finance-income">Income: ₦{{ "{:,.2f}".format(m.income) }}</div>
-          <div class="finance-maint">Maintenance: ₦{{ "{:,.2f}".format(m.maintenance) }}</div>
-          <div class="finance-net {% if m.net >= 0 %}positive{% else %}negative{% endif %}">
-            Net: ₦{{ "{:,.2f}".format(m.net) }}
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <h1>Finance Overview</h1>
+        
+        <!-- Total Summary Cards -->
+        <div class="total-summary">
+          <div class="summary-card income-card">
+            <div class="card-icon">💰</div>
+            <div class="card-content">
+              <div class="card-title">Total Income</div>
+              <div class="card-value">{{ total_income|tsh }}</div>
+              <div class="card-subtitle">From verified transactions</div>
+            </div>
+          </div>
+          <div class="summary-card maintenance-card">
+            <div class="card-icon">🔧</div>
+            <div class="card-content">
+              <div class="card-title">Total Maintenance</div>
+              <div class="card-value">{{ total_maintenance|tsh }}</div>
+              <div class="card-subtitle">Resolved maintenance costs</div>
+            </div>
+          </div>
+          <div class="summary-card profit-card">
+            <div class="card-icon">📊</div>
+            <div class="card-content">
+              <div class="card-title">Net Profit</div>
+              <div class="card-value {% if net_profit >= 0 %}positive{% else %}negative{% endif %}">{{ net_profit|tsh }}</div>
+              <div class="card-subtitle">Income - Maintenance</div>
+            </div>
           </div>
         </div>
-        {% endfor %}
-      </div>
-      <table class="finance-table">
-        <thead>
-          <tr>
-            <th>Month</th>
-            <th>Total Income</th>
-            <th>Total Maintenance</th>
-            <th>Net Profit</th>
-          </tr>
-        </thead>
-        <tbody>
+
+        <!-- Monthly Breakdown -->
+        <h2>Monthly Breakdown</h2>
+        <div class="finance-cards">
           {% for m in summary %}
-          <tr>
-            <td>{{ m.month }}</td>
-            <td>₦{{ "{:,.2f}".format(m.income) }}</td>
-            <td>₦{{ "{:,.2f}".format(m.maintenance) }}</td>
-            <td class="{% if m.net >= 0 %}positive{% else %}negative{% endif %}">₦{{ "{:,.2f}".format(m.net) }}</td>
-          </tr>
+          <div class="finance-card">
+            <div class="finance-month">{{ m.month }}</div>
+            <div class="finance-income">Income: {{ m.income|tsh }}</div>
+            <div class="finance-maint">Maintenance: {{ m.maintenance|tsh }}</div>
+            <div class="finance-net {% if m.net >= 0 %}positive{% else %}negative{% endif %}">
+              Net: {{ m.net|tsh }}
+            </div>
+          </div>
           {% endfor %}
-        </tbody>
-      </table>
+        </div>
+        
+        <table class="finance-table">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Total Income</th>
+              <th>Total Maintenance</th>
+              <th>Net Profit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in summary %}
+            <tr>
+              <td>{{ m.month }}</td>
+              <td>{{ m.income|tsh }}</td>
+              <td>{{ m.maintenance|tsh }}</td>
+              <td class="{% if m.net >= 0 %}positive{% else %}negative{% endif %}">{{ m.net|tsh }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
 
-<script>
-function toggleSidebar() {
-  var sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('collapsed');
-  var mainSection = document.querySelector('.main-section');
-  if (mainSection) {
-    mainSection.classList.toggle('expanded');
-  }
-}
-</script>
-
+  <script src="/static/js/sidebar.js"></script>
+  
 </body>
 </html>

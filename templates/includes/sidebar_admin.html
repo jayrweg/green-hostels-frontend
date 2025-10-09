@@ -1,15 +1,53 @@
 <!-- includes/sidebar_admin.html -->
-<aside class="sidebar">
-  <h2 class="logo">🏠 Green House Admin</h2>
+<aside class="sidebar" id="sidebar">
+  <h2 class="logo">🏢</h2>
+  <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
   <nav class="menu">
-    <a href="/admin/dashboard" class="active">Dashboard</a>
-    <a href="/admin/rooms">Room Management</a>
-    <a href="/admin/tenants">Tenants</a>
-    <a href="/admin/contracts">Contracts</a>
-    <a href="/admin/maintenance">Maintenance</a>
-    <a href="/admin/finance">Finance</a>
-    <a href="/admin/announcements">Announcements</a>
-    <a href="/admin/admins">Admin Accounts</a>
-    <a href="/logout">Logout</a>
+    <a href="/admin/dashboard" {% if request.path == '/admin/dashboard' %}class="active"{% endif %}>
+      <span class="sidebar-icon">🏠</span>
+      <span class="sidebar-text">Dashboard</span>
+    </a>
+    <a href="/admin/rooms" {% if request.path == '/admin/rooms' %}class="active"{% endif %}>
+      <span class="sidebar-icon">🚪</span>
+      <span class="sidebar-text">Rooms</span>
+    </a>
+    <a href="/admin/tenants" {% if request.path == '/admin/tenants' %}class="active"{% endif %}>
+      <span class="sidebar-icon">👥</span>
+      <span class="sidebar-text">Tenants</span>
+    </a>
+    <a href="/admin/contracts" {% if request.path == '/admin/contracts' %}class="active"{% endif %}>
+      <span class="sidebar-icon">📄</span>
+      <span class="sidebar-text">Contracts</span>
+    </a>
+    <a href="/admin/maintenance" {% if request.path == '/admin/maintenance' %}class="active"{% endif %}>
+      <span class="sidebar-icon">🛠️</span>
+      <span class="sidebar-text">Maintenance</span>
+    </a>
+    <a href="/admin/transactions" {% if request.path == '/admin/transactions' %}class="active"{% endif %}>
+      <span class="sidebar-icon">💳</span>
+      <span class="sidebar-text">Transactions</span>
+    </a>
+    <a href="/admin/uploads" {% if request.path == '/admin/uploads' %}class="active"{% endif %}>
+      <span class="sidebar-icon">📤</span>
+      <span class="sidebar-text">Uploads</span>
+    </a>
+    <a href="/admin/finance" {% if request.path == '/admin/finance' %}class="active"{% endif %}>
+      <span class="sidebar-icon">💰</span>
+      <span class="sidebar-text">Finance</span>
+    </a>
+    <a href="/admin/announcements" {% if request.path == '/admin/announcements' %}class="active"{% endif %}>
+      <span class="sidebar-icon">📢</span>
+      <span class="sidebar-text">Announcements</span>
+    </a>
+    {% if session.user and session.user.role == 'superadmin' %}
+      <a href="/admin/admins" {% if request.path.startswith('/admin/admins') %}class="active"{% endif %}>
+        <span class="sidebar-icon">🛡️</span>
+        <span class="sidebar-text">Admin Accounts</span>
+      </a>
+    {% endif %}
+    <a href="/logout">
+      <span class="sidebar-icon">🚪</span>
+      <span class="sidebar-text">Logout</span>
+    </a>
   </nav>
 </aside>

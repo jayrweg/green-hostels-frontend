@@ -2,68 +2,186 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Tenant Dashboard - Green House</title>
-
-  <!-- CSS Stylesheets -->
   <link rel="stylesheet" href="/static/css/base.css" />
-  <link rel="stylesheet" href="/static/css/header.css" />
   <link rel="stylesheet" href="/static/css/sidebar.css" />
-  <link rel="stylesheet" href="/static/css/content.css" />
-  <link rel="stylesheet" href="/static/css/forms.css" />
-  <link rel="stylesheet" href="/static/css/buttons.css" />
   <link rel="stylesheet" href="/static/css/layout.css" />
-  <link rel="stylesheet" href="/static/css/ten_dashboard.css" />
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-toggle" onclick="toggleSidebar()">☰</div>
-      <h2 class="logo">🏠 GH</h2>
-      <nav class="menu">
-        <a href="/tenant/dashboard" class="active">Dashboard</a>
-        <a href="/tenant/profile">Profile</a>
-        <a href="/tenant/contracts">Contracts</a>
-        <a href="/tenant/rules">Rules</a>
-        <a href="/tenant/calendar">Calendar</a>
-        <a href="/tenant/proofs">Uploads</a>
-        <a href="/tenant/transactions">Transactions</a>
-        <a href="/tenant/suggestions">Suggestions</a>
-        <a href="/tenant/maintenance">Maintenance</a>
-        <a href="/tenant/announcements">Announcements</a>
-        <a href="/tenant/downloads">Downloads</a>
-        <a href="/logout">Logout</a>
-      </nav>
-    </aside>
-
-    <div class="main-section" id="mainContent">
-      <header class="dashboard-header">
-        <h1>Tenant Dashboard</h1>
-      </header>
-
-      <main class="main-content">
-        <h2>Welcome, {{ tenant_name }}!</h2>
-        <p>This is your personal dashboard where you can view and manage all your tenancy-related information.</p>
-
-        <div class="dashboard-card new-announcements-card">
-          <div class="card-title">New Announcements</div>
-          <div class="card-value">{{ new_announcements_count }}</div>
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
+    {% include 'tenant/sidebar.html' %}
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <div class="welcome-msg">
+          <h1>Welcome back, {{ tenant_name }}! 🏠</h1>
+          <p class="sub">Here's what's happening in your hostel</p>
         </div>
-      </main>
 
-      <footer class="dashboard-footer">
-        &copy; 2025 Green House. All rights reserved.
-      </footer>
+        <!-- Personal Stats -->
+        <section class="personal-stats-section">
+          <h2 class="section-title">📊 Your Overview</h2>
+          <div class="card-grid">
+            <div class="personal-card announcements-card">
+              <div class="card-icon">📢</div>
+              <div class="card-content">
+                <div class="card-title">New Announcements</div>
+                <div class="card-value">{{ new_announcements_count }}</div>
+                <div class="card-subtitle">Unread messages</div>
+              </div>
+            </div>
+            <div class="personal-card profile-card">
+              <div class="card-icon">👤</div>
+              <div class="card-content">
+                <div class="card-title">Profile Status</div>
+                <div class="card-value">Complete</div>
+                <div class="card-subtitle">All info updated</div>
+              </div>
+            </div>
+            <div class="personal-card contract-card">
+              <div class="card-icon">📄</div>
+              <div class="card-content">
+                <div class="card-title">Contract Status</div>
+                <div class="card-value">Active</div>
+                <div class="card-subtitle">Valid agreement</div>
+              </div>
+            </div>
+            <div class="personal-card payments-card {% if payment_status == 'partial' %}outstanding{% endif %}">
+              <div class="card-icon">💳</div>
+              <div class="card-content">
+                <div class="card-title">Payment Status</div>
+                {% if payment_status == 'paid' %}
+                  <div class="card-value paid">✓ PAID</div>
+                  <div class="card-subtitle">All dues cleared</div>
+                {% elif payment_status == 'partial' %}
+                  <div class="card-value outstanding">⚠ OUTSTANDING</div>
+                  <div class="card-subtitle">Remaining: {{ remaining_amount|tsh }}</div>
+                {% else %}
+                  <div class="card-value">No Transaction</div>
+                  <div class="card-subtitle">Contact admin</div>
+                {% endif %}
+              </div>
+            </div>
+            {% if farthest_due_date %}
+            <div class="personal-card due-date-card">
+              <div class="card-icon">📅</div>
+              <div class="card-content">
+                <div class="card-title">Contract Due Date</div>
+                <div class="card-value">{{ farthest_due_date[:10] }}</div>
+                <div class="card-subtitle">Latest check-out date</div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- Payment Summary Section -->
+        <section class="payment-summary-section">
+          <h2 class="section-title">💰 Payment Summary</h2>
+          <div class="summary-grid">
+            {% if payment_status == 'paid' %}
+            <div class="summary-card paid-summary">
+              <div class="summary-icon">✅</div>
+              <div class="summary-content">
+                <div class="summary-title">Payment Complete</div>
+                <div class="summary-description">All your dues have been cleared. You're all set!</div>
+                <div class="summary-status">Status: Fully Paid</div>
+              </div>
+            </div>
+            {% elif payment_status == 'partial' %}
+            <div class="summary-card outstanding-summary">
+              <div class="summary-icon">⚠️</div>
+              <div class="summary-content">
+                <div class="summary-title">Outstanding Payment</div>
+                <div class="summary-description">You have remaining dues to clear</div>
+                <div class="summary-amount">Remaining: {{ remaining_amount|tsh }}</div>
+                <div class="summary-action">Please contact admin to make payment</div>
+              </div>
+            </div>
+            {% else %}
+            <div class="summary-card no-transaction-summary">
+              <div class="summary-icon">ℹ️</div>
+              <div class="summary-content">
+                <div class="summary-title">No Transaction Record</div>
+                <div class="summary-description">No payment records found in the system</div>
+                <div class="summary-action">Please contact admin to set up your payment</div>
+              </div>
+            </div>
+            {% endif %}
+            
+            {% if farthest_due_date %}
+            <div class="summary-card due-date-summary">
+              <div class="summary-icon">📅</div>
+              <div class="summary-content">
+                <div class="summary-title">Contract Information</div>
+                <div class="summary-description">Your contract details</div>
+                <div class="summary-date">Due Date: {{ farthest_due_date[:10] }}</div>
+                <div class="summary-note">Check-out date for your current contract</div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </section>
+
+        <!-- Tips Section -->
+        <section class="tips-section">
+          <h2 class="section-title">💡 Quick Tips</h2>
+          <div class="tips-grid">
+            <div class="tip-card">
+              <div class="tip-icon">📱</div>
+              <div class="tip-content">
+                <div class="tip-title">Stay Updated</div>
+                <div class="tip-desc">Check announcements regularly for important updates</div>
+              </div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon">🔧</div>
+              <div class="tip-content">
+                <div class="tip-title">Report Issues</div>
+                <div class="tip-desc">Use the maintenance section to report any problems</div>
+              </div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon">💡</div>
+              <div class="tip-content">
+                <div class="tip-title">Share Ideas</div>
+                <div class="tip-desc">Your suggestions help improve the hostel experience</div>
+              </div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon">📄</div>
+              <div class="tip-content">
+                <div class="tip-title">Keep Records</div>
+                <div class="tip-desc">Upload payment proofs to maintain your records</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
 
+  <script src="/static/js/sidebar.js"></script>
   <script>
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.getElementById('mainContent');
-      sidebar.classList.toggle('collapsed');
-      mainContent.classList.toggle('collapsed');
-    }
+    // Add animation on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const cards = document.querySelectorAll('.personal-card, .tip-card');
+      cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+          card.style.transition = 'all 0.6s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 100);
+      });
+    });
   </script>
 </body>
 </html>

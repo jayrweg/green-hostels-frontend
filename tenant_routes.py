@@ -1,8 +1,20 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from supabase_client import supabase
 from datetime import datetime
+from functools import wraps
 
 tenant_bp = Blueprint('tenant', __name__, url_prefix="/tenant")
+
+def csrf_protect(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if request.method == 'POST':
+            form_token = request.form.get('csrf_token')
+            if not form_token or form_token != session.get('csrf_token'):
+                flash('Invalid or missing CSRF token.', 'error')
+                return redirect(request.referrer or url_for('tenant.tenant_dashboard'))
+        return view(*args, **kwargs)
+    return wrapped
 
 def parse_datetime(dt_str):
     try:
@@ -25,7 +37,52 @@ def tenant_dashboard():
     marked = [row['announcement_id'] for row in read_rows]
     new_announcements_count = len([a for a in announcements if a['id'] not in marked])
     tenant_name = session["user"].get("name", session["user"]["username"])
-    return render_template("tenant/dashboard.html", tenant_name=tenant_name, new_announcements_count=new_announcements_count)
+    
+    # Get tenant's transaction and payment status
+    try:
+        transaction_resp = supabase.table('transactions').select('*').eq('tenant_id', tenant_id).order('created_at', desc=True).execute()
+        transactions = transaction_resp.data or []
+        transaction = transactions[0] if transactions else None
+    except Exception:
+        transaction = None
+    
+    try:
+        tenant_info = supabase.table('tenants').select('check_out').eq('id', tenant_id).single().execute().data
+    except Exception:
+        tenant_info = None
+    
+    payment_status = None
+    remaining_amount = 0
+    due_date = None
+    farthest_due_date = None
+    
+    if transaction:
+        required = float(transaction.get('required_amount', 0))
+        submitted = float(transaction.get('submitted_amount', 0))
+        remaining_amount = max(0, required - submitted)
+        payment_status = 'paid' if submitted >= required else 'partial'
+    
+    if tenant_info and tenant_info.get('check_out'):
+        try:
+            due_date = tenant_info.get('check_out')
+            farthest_due_date = due_date
+        except:
+            pass
+    
+    # Find the farthest due date from all transactions
+    if transactions:
+        for trans in transactions:
+            if trans.get('check_out'):
+                if not farthest_due_date or trans.get('check_out') > farthest_due_date:
+                    farthest_due_date = trans.get('check_out')
+    
+    return render_template("tenant/dashboard.html", 
+                         tenant_name=tenant_name, 
+                         new_announcements_count=new_announcements_count,
+                         payment_status=payment_status,
+                         remaining_amount=remaining_amount,
+                         due_date=due_date,
+                         farthest_due_date=farthest_due_date)
 
 @tenant_bp.route('/profile')
 def profile():
@@ -56,6 +113,7 @@ def profile():
     )
 
 @tenant_bp.route('/profile/update', methods=['POST'])
+@csrf_protect
 def update_profile():
     tenant_id = session.get('user', {}).get('id')
     phone = request.form.get('phone')
@@ -78,6 +136,7 @@ def update_profile():
     return redirect(url_for('tenant.profile'))
 
 @tenant_bp.route('/profile/upload', methods=['POST'])
+@csrf_protect
 def upload_profile_picture():
     tenant_id = session.get('user', {}).get('id')
     file = request.files.get('profile_picture')
@@ -122,6 +181,7 @@ def mark_announcement_read_tenant():
     return redirect(url_for('tenant.tenant_announcements'))
 
 @tenant_bp.route('/suggestions', methods=['GET', 'POST'])
+@csrf_protect
 def tenant_suggestions():
     tenant_id = session.get('user', {}).get('id')
     if request.method == 'POST':
@@ -184,6 +244,7 @@ def clear_suggestions_tenant():
     return redirect(url_for('tenant.tenant_suggestions'))
 
 @tenant_bp.route("/maintenance", methods=["GET", "POST"])
+@csrf_protect
 def tenant_maintenance():
     if request.method == "POST":
         tenant_id = session['user']['id']
@@ -248,6 +309,7 @@ def tenant_proofs():
     return render_template('tenant/proofs.html', proofs=proofs)
 
 @tenant_bp.route('/proofs/upload', methods=['POST'])
+@csrf_protect
 def tenant_proofs_upload():
     tenant_id = session['user']['id']
     amount = request.form.get('amount')

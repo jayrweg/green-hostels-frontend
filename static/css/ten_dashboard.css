@@ -11,8 +11,9 @@ body {
 
 /* Sidebar */
 .sidebar {
-  width: 260px;
-  background-color: #14532d; /* dark green */
+  width: 240px;
+  min-width: 200px;
+  background: var(--green-500, #388e3c);
   color: white;
   padding: 20px;
   position: fixed;
@@ -40,7 +41,7 @@ body {
   position: absolute;
   top: 10px;
   right: -5px;
-  background-color: #14532d;
+  background: var(--green-500, #388e3c);
   color: white;
   padding: 5px 10px;
   cursor: pointer;
@@ -64,12 +65,12 @@ body {
 
 .menu a:hover,
 .menu a.active {
-  background-color: #166534; /* lighter green */
+  background: var(--green-600, #2e7031);
 }
 
 /* Main Content */
 .main-section {
-  margin-left: 260px;
+  margin-left: 240px;
   padding: 30px;
   flex: 1;
   display: flex;
@@ -79,7 +80,7 @@ body {
 }
 
 .sidebar.collapsed ~ .main-section {
-  margin-left: 80px;
+  margin-left: 60px;
 }
 
 .main-content h2 {

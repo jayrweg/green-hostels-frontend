@@ -2,34 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Contracts</title>
-
-  <!-- CSS -->
-  <link rel="stylesheet" href="/static/css/base.css">
-  <link rel="stylesheet" href="/static/css/header.css">
-  <link rel="stylesheet" href="/static/css/sidebar.css">
-  <link rel="stylesheet" href="/static/css/content.css">
-  <link rel="stylesheet" href="/static/css/forms.css">
-  <link rel="stylesheet" href="/static/css/buttons.css">
-  <link rel="stylesheet" href="/static/css/layout.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Contracts - Green House Admin</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/contracts.css" />
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css">
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
-
-    <!-- Sidebar -->
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-
-    <!-- Main -->
-    <div class="main-section flex-column" id="mainContent">
-      <header class="header">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
         <h1>Contracts</h1>
-        <p>Manage rental contracts and agreements.</p>
-      </header>
-
-      <main class="main-content">
+        <main class="main-content">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           <div class="flash-messages">
@@ -86,15 +73,14 @@
               </tbody>
             </table>
           </div>
-        </section>
-      </main>
-
-      <footer class="footer">
-        <p>&copy; 2025 Green House Hostel System</p>
-      </footer>
+        </main>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
 
+  <script src="/static/js/sidebar.js"></script>
   <script>
     function confirmReplace(contractUrl) {
       if (contractUrl && contractUrl !== 'None') {
@@ -103,14 +89,5 @@
       return true;
     }
   </script>
-<script>
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
-    sidebar.classList.toggle('collapsed');
-    if (mainContent) mainContent.classList.toggle('collapsed');
-  }
-</script>
-
 </body>
 </html>

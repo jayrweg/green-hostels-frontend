@@ -1,3 +1,104 @@
+/* Total Summary Cards */
+.total-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--green-500, #388e3c), var(--green-600, #2e7031));
+  border-radius: 20px 20px 0 0;
+}
+
+.summary-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+}
+
+.summary-card .card-icon {
+  font-size: 3rem;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--green-500, #388e3c), var(--green-600, #2e7031));
+  border-radius: 20px;
+  color: white;
+  box-shadow: 0 4px 16px rgba(56, 142, 60, 0.3);
+  position: relative;
+}
+
+.summary-card .card-icon::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, var(--green-500, #388e3c), var(--green-600, #2e7031));
+  border-radius: 22px;
+  z-index: -1;
+  opacity: 0.3;
+}
+
+.summary-card .card-content {
+  flex: 1;
+}
+
+.summary-card .card-title {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-card .card-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--green-600, #2e7031);
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.summary-card .card-value.positive {
+  color: #2e7d32;
+}
+
+.summary-card .card-value.negative {
+  color: #d32f2f;
+}
+
+.summary-card .card-subtitle {
+  font-size: 0.9rem;
+  color: #888;
+  font-weight: 500;
+}
+
 .finance-cards {
   display: flex;
   flex-wrap: wrap;

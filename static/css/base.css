@@ -1,19 +1,10 @@
-body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #F4F4F4;
-  color: #333333;
+:root {
+  --green-500: #388e3c;
+  --green-600: #2e7031;
+  --green-700: #1f8f52;
+  --sidebar-width: 240px;
+  --sidebar-collapsed-width: 60px;
 }
-a {
-  color: #2E7D32;
-  text-decoration: none;
-}
-
-
-
-
-
-
 
 * {
   margin: 0;
@@ -25,4 +16,340 @@ a {
 body {
   background-color: #f5f7f9;
   color: #333;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: #2E7D32;
+  text-decoration: none;
+}
+
+/* Global Header */
+.global-header {
+  background: #388e3c;
+  color: white;
+  padding: 0.7rem 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.global-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.header-logo {
+  font-weight: bold;
+  font-size: 1.3rem;
+  letter-spacing: 1px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.logout-link {
+  color: #fff;
+  text-decoration: underline;
+  margin-left: 1rem;
+}
+
+.sidebar-toggle-global {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background 0.3s ease;
+}
+
+.sidebar-toggle-global:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  outline: none;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.sidebar-toggle:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Main Layout */
+.main-layout {
+  display: flex;
+  min-height: 100vh;
+  margin-top: 70px; /* Account for fixed header */
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: #388e3c;
+  color: #fff;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: width 0.3s ease, min-width 0.3s ease;
+  box-shadow: 2px 0 8px rgba(44, 62, 80, 0.07);
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 0.97rem;
+}
+
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
+  min-width: var(--sidebar-collapsed-width);
+  align-items: center;
+}
+
+.sidebar .logo {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 2rem 0 1rem 1.5rem;
+  color: #fff;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar.collapsed .logo {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-left: 1rem;
+  outline: none;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.menu a {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  text-decoration: none;
+  padding: 0.45rem 1rem;
+  font-size: 0.97rem;
+  gap: 0.5rem;
+  margin-bottom: 0.1rem;
+  border-left: 4px solid transparent;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.menu a.active,
+.menu a:hover {
+  background: var(--green-600, #2e7031);
+  border-left: 4px solid #fff;
+  color: #fff;
+}
+
+.sidebar-icon {
+  min-width: 32px;
+  text-align: center;
+  font-size: 1.3rem;
+}
+
+.sidebar-text {
+  margin-left: 12px;
+  transition: opacity 0.3s ease, width 0.3s ease, margin 0.3s ease;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed .sidebar-text {
+  opacity: 0;
+  width: 0;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* Main Content */
+.main-content-wrapper {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  transition: margin-left 0.3s ease;
+  min-height: calc(100vh - 70px);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.collapsed ~ .main-content-wrapper {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+.main-section {
+  flex: 1;
+  padding: 2rem;
+  background: #f8f9fa;
+}
+
+/* Footer */
+.global-footer {
+  background: var(--green-600, #2e7031);
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  margin-top: auto;
+}
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .global-header {
+    padding: 1rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+  
+  .global-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .sidebar {
+    width: var(--sidebar-collapsed-width);
+    min-width: var(--sidebar-collapsed-width);
+    top: 70px; /* Account for fixed header */
+    height: calc(100vh - 70px);
+  }
+  
+  .sidebar .sidebar-text {
+    display: none;
+  }
+  
+  .main-content-wrapper {
+    margin-left: var(--sidebar-collapsed-width);
+    margin-top: 70px; /* Account for fixed header */
+  }
+  
+  .main-section {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .global-header {
+    padding: 0.8rem 1rem;
+  }
+  
+  .sidebar {
+    position: fixed;
+    left: -240px;
+    top: 70px; /* Account for fixed header */
+    z-index: 200;
+    transition: left 0.3s ease;
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    height: calc(100vh - 70px);
+  }
+  
+  .sidebar.show {
+    left: 0;
+  }
+  
+  /* Show text when sidebar is expanded on mobile */
+  .sidebar.show .sidebar-text {
+    display: inline-block !important;
+    opacity: 1 !important;
+    width: auto !important;
+    margin-left: 12px !important;
+  }
+  
+  /* Ensure sidebar items are properly spaced on mobile when expanded */
+  .sidebar.show .menu a {
+    padding: 0.5rem 1rem;
+    justify-content: flex-start;
+  }
+  
+  .main-content-wrapper {
+    margin-left: 0;
+    margin-top: 70px; /* Account for fixed header */
+  }
+  
+  .main-section {
+    padding: 0.5rem;
+    min-width: 0; /* Allow content to shrink */
+    overflow-x: auto; /* Allow horizontal scrolling if needed */
+  }
+  
+  /* Ensure content fits on small screens */
+  .main-section h1 {
+    font-size: 1.5rem;
+    word-wrap: break-word;
+  }
+  
+  .main-section h2 {
+    font-size: 1.2rem;
+    word-wrap: break-word;
+  }
+  
+  /* Make sure tables and cards are responsive */
+  .main-section table,
+  .main-section .card,
+  .main-section .metric-card {
+    min-width: 280px; /* Minimum width for readability */
+  }
+}
+
+/* Utility Classes */
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.mt-auto {
+  margin-top: auto;
 }

@@ -1,4 +1,6 @@
 import uuid
+import os
+import secrets
 from mimetypes import guess_type
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from supabase_client import supabase
@@ -13,11 +15,58 @@ from collections import defaultdict
 
 
 app = Flask(__name__)
-app.secret_key = "super_secret_key"
+# Secret key from environment (fallback kept for dev only)
+app.secret_key = os.getenv("SECRET_KEY", "super_secret_key")
+
+# Session security settings
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.getenv("FLASK_ENV") == "production"
+app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 8  # 8 hours
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB uploads
 
 app.register_blueprint(tenant_bp)
 app.jinja_env.globals.update(request=request)
 
+
+# ---------- Jinja Filters ----------
+def format_tsh(value):
+    try:
+        num = float(value or 0)
+        return f"TSH {num:,.2f}"
+    except Exception:
+        return value
+
+def month_name(month_num):
+    months = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December']
+    try:
+        return months[int(month_num)]
+    except (ValueError, IndexError):
+        return str(month_num)
+
+app.jinja_env.filters['tsh'] = format_tsh
+app.jinja_env.filters['month_name'] = month_name
+
+# Inject CSRF token into templates
+@app.context_processor
+def inject_csrf_token():
+    token = session.get('csrf_token')
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session['csrf_token'] = token
+    return {'csrf_token': token}
+
+def csrf_protect(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if request.method == 'POST':
+            form_token = request.form.get('csrf_token')
+            if not form_token or form_token != session.get('csrf_token'):
+                flash('Invalid or missing CSRF token.', 'error')
+                return redirect(request.referrer or url_for('home'))
+        return view(*args, **kwargs)
+    return wrapped
 
 def is_superadmin():
     return "user" in session and session["user"].get("role") == "superadmin"
@@ -32,9 +81,28 @@ def superadmin_only(view):
     return wrapped
 
 
+def is_admin_or_superadmin() -> bool:
+    return "user" in session and session["user"].get("role") in ["admin", "superadmin"]
+
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if not is_admin_or_superadmin():
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped
+
+
 
 BUCKET_NAME = "contracts"
 ALLOWED_EXTENSIONS = {"pdf", "jpg", "jpeg", "png"}
+ALLOWED_MIME_TYPES = {
+    "pdf": "application/pdf",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "png": "image/png",
+}
 
 
 # ---------- Helpers ----------
@@ -62,6 +130,11 @@ def upload_to_supabase_bucket(file_storage) -> str | None:
     mimetype, _ = guess_type(file_storage.filename)
     if not mimetype:
         mimetype = "application/octet-stream"
+
+    # cross-check mimetype against extension
+    expected_mime = ALLOWED_MIME_TYPES.get(ext)
+    if expected_mime and expected_mime != mimetype and not mimetype.startswith("image/"):
+        return None
 
     # IMPORTANT: pass options as dict with string values
     supabase.storage.from_(BUCKET_NAME).upload(
@@ -148,6 +221,7 @@ def login():
 
 # ---------- Admin ----------
 @app.route("/admin/dashboard")
+@admin_required
 def admin_dashboard():
     admin_id = session['user']['id']
     suggestions = (
@@ -182,17 +256,32 @@ def admin_dashboard():
         supabase.table("maintenance").select("id", count="exact").execute().count or 0
     )
 
+    # Calculate unpaid tenants summary
+    transactions = supabase.table('transactions').select('tenant_id, required_amount, submitted_amount').execute().data or []
+    unpaid_tenants_count = 0
+    total_outstanding_amount = 0
+    
+    for trans in transactions:
+        required = float(trans.get('required_amount', 0))
+        submitted = float(trans.get('submitted_amount', 0))
+        if submitted < required:
+            unpaid_tenants_count += 1
+            total_outstanding_amount += (required - submitted)
+
     return render_template(
         "admin/dashboard.html",
         admin_name=admin_name,
         room_count=room_count,
         tenant_count=tenant_count,
         maintenance_count=maintenance_count,
-        new_suggestions_count=new_suggestions_count
+        new_suggestions_count=new_suggestions_count,
+        unpaid_tenants_count=unpaid_tenants_count,
+        total_outstanding_amount=total_outstanding_amount
     )
 
 
 @app.route("/admin/rooms")
+@admin_required
 def admin_rooms():
     if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
         return redirect("/login")
@@ -225,6 +314,7 @@ def admin_rooms():
 
 
 @app.route("/admin/tenants")
+@admin_required
 def admin_tenants():
     if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
         return redirect("/login")
@@ -271,6 +361,7 @@ def admin_tenants():
 
 
 @app.route("/admin/contracts")
+@admin_required
 def admin_contracts():
     if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
         return redirect("/login")
@@ -300,6 +391,7 @@ def admin_contracts():
 
 
 @app.route("/admin/contracts/upload", methods=["POST"])
+@admin_required
 def upload_contract():
     if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
         return redirect("/login")
@@ -325,6 +417,7 @@ def upload_contract():
 
 
 @app.route("/admin/maintenance", methods=["GET"])
+@admin_required
 def admin_maintenance():
     admin_id = session['user']['id']
     hidden_rows = supabase.table("admin_hidden_requests").select("request_id").eq("admin_id", admin_id).execute().data or []
@@ -348,6 +441,8 @@ def admin_maintenance():
     return render_template('admin/maintenance.html', requests=requests)
 
 @app.route('/admin/maintenance/resolve', methods=['POST'])
+@admin_required
+@csrf_protect
 def admin_maintenance_resolve():
     req_id = request.form.get('id')
     amount_used = request.form.get('amount_used')
@@ -364,6 +459,8 @@ def admin_maintenance_resolve():
 
 
 @app.route('/admin/maintenance/admin_only', methods=['POST'])
+@admin_required
+@csrf_protect
 def admin_maintenance_admin_only():
     admin_id = session['user']['id']
     title = request.form.get('title')
@@ -389,6 +486,8 @@ def parse_datetime(dt_str):
         return dt_str
 
 @app.route('/admin/announcements', methods=['GET', 'POST'])
+@admin_required
+@csrf_protect
 def admin_announcements():
     if request.method == 'POST':
         title = request.form.get('title')
@@ -414,6 +513,8 @@ def admin_announcements():
     return render_template('admin/announcements_admin.html', announcements=announcements)
 
 @app.route('/admin/announcements/delete', methods=['POST'])
+@admin_required
+@csrf_protect
 def delete_announcement():
     ann_id = request.form.get('id')
     if ann_id:
@@ -423,6 +524,7 @@ def delete_announcement():
 
 
 @app.route('/admin/suggestions')
+@admin_required
 def admin_suggestions():
     admin_id = session['user']['id']
     # Fetch hidden suggestions from DB (optional, if you persist this)
@@ -444,6 +546,7 @@ def admin_suggestions():
     return render_template('admin/suggestions_admin.html', suggestions=suggestions, admin_read_suggestions=marked)
 
 @app.route('/admin/suggestions/mark_read', methods=['POST'])
+@admin_required
 def mark_suggestion_read_admin():
     sug_id = request.form.get('id')
     admin_id = session['user']['id']
@@ -455,6 +558,7 @@ def mark_suggestion_read_admin():
     return redirect(url_for('admin_suggestions'))
 
 @app.route('/admin/suggestions/delete', methods=['POST'])
+@admin_required
 def delete_suggestion_admin():
     sug_id = request.form.get('id')
     admin_id = session['user']['id']
@@ -473,6 +577,7 @@ def delete_suggestion_admin():
     return redirect(url_for('admin_suggestions'))
 
 @app.route('/admin/suggestions/clear', methods=['POST'])
+@admin_required
 def clear_suggestions_admin():
     admin_id = session['user']['id']
     suggestions = (
@@ -505,6 +610,7 @@ def logout():
 
 # ---------- Rooms: Edit ----------
 @app.route("/admin/rooms/edit", methods=["POST"])
+@admin_required
 def edit_room_status():
     if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
         return redirect("/login")
@@ -528,6 +634,7 @@ def edit_room_status():
 
 # ---------- Tenants: Add ----------
 @app.route("/admin/tenants/add", methods=["POST"])
+@admin_required
 def add_tenant():
     username = request.form.get('tenants_username')
     # Check in tenants table
@@ -596,6 +703,7 @@ def add_tenant():
 
 # ---------- Tenants: Delete ----------
 @app.route("/admin/tenants/delete/<tenant_id>", methods=["POST"])
+@admin_required
 def delete_tenant(tenant_id):
     if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
         return redirect("/login")
@@ -634,6 +742,7 @@ def delete_tenant(tenant_id):
 
 # ---------- Tenants: Edit (upload new contract) ----------
 @app.route("/admin/tenants/edit", methods=["POST"])
+@admin_required
 def edit_tenant():
     tenant_id = request.form.get("tenant_id")
     username = request.form.get("tenants_username")
@@ -734,6 +843,7 @@ def edit_tenant():
 
 # ---------- Tenants: Shift Room ----------
 @app.route("/admin/tenants/shift_room", methods=["POST"])
+@admin_required
 def shift_tenant_room():
     tenant_id = request.form.get("tenant_id")
     new_room_id = request.form.get("room_id")
@@ -902,61 +1012,208 @@ def parse_datetime(dt_str):
         return dt_str
 
 @app.route('/admin/transactions', methods=['GET'])
+@admin_required
 def admin_transactions():
-    tenant_id = request.args.get('tenant_id')
+    # Get filter parameters
+    tenant_filter_id = request.args.get('tenant_id')
     transaction_id = request.args.get('transaction_id')
+    floor_filter = request.args.get('floor')
+    ownership_filter = request.args.get('ownership')
+    contract_month = request.args.get('contract_month')
+    contract_year = request.args.get('contract_year')
+    search_query = request.args.get('search')
+
+    # Build base query
     query = supabase.table('transactions').select('*').order('created_at', desc=True)
-    if tenant_id:
-        query = query.eq('tenant_id', tenant_id)
+    
+    # Apply filters
+    if tenant_filter_id:
+        query = query.eq('tenant_id', tenant_filter_id)
     if transaction_id:
         query = query.eq('id', transaction_id)
+    if floor_filter:
+        query = query.eq('floor_number', floor_filter)
+    
     transactions = query.execute().data or []
-    return render_template('admin/transactions.html', transactions=transactions)
+
+    # Get all tenants with room information
+    tenants_resp = supabase.table('tenants').select('id, tenants_name, room_id, check_out').order('tenants_name').execute()
+    tenants = tenants_resp.data or []
+
+    # Get room information for tenants
+    room_ids = [t.get('room_id') for t in tenants if t.get('room_id')]
+    rooms_by_id = {}
+    if room_ids:
+        try:
+            rooms_resp = (
+                supabase.table('rooms')
+                .select('id, room_number, floor_number')
+                .in_('id', room_ids)
+                .execute()
+            )
+            for r in (rooms_resp.data or []):
+                rooms_by_id[r['id']] = r
+        except Exception:
+            rooms_by_id = {}
+
+    # Enrich tenants with room information
+    for t in tenants:
+        r = rooms_by_id.get(t.get('room_id'))
+        if r:
+            t['room_number'] = r.get('room_number')
+            t['floor_number'] = r.get('floor_number')
+
+    # Apply additional filters
+    if ownership_filter == 'owned':
+        # Filter tenants who have completed payments
+        owned_tenant_ids = []
+        for trans in transactions:
+            if trans.get('required_amount') and trans.get('submitted_amount'):
+                if float(trans.get('submitted_amount', 0)) >= float(trans.get('required_amount', 0)):
+                    owned_tenant_ids.append(trans.get('tenant_id'))
+        transactions = [t for t in transactions if t.get('tenant_id') in owned_tenant_ids]
+    
+    elif ownership_filter == 'not_owned':
+        # Filter tenants who haven't completed payments
+        not_owned_tenant_ids = []
+        for trans in transactions:
+            if trans.get('required_amount') and trans.get('submitted_amount'):
+                if float(trans.get('submitted_amount', 0)) < float(trans.get('required_amount', 0)):
+                    not_owned_tenant_ids.append(trans.get('tenant_id'))
+        transactions = [t for t in transactions if t.get('tenant_id') in not_owned_tenant_ids]
+
+    # Filter by contract expiry month/year
+    if contract_month and contract_year:
+        filtered_transactions = []
+        for trans in transactions:
+            tenant_id = trans.get('tenant_id')
+            tenant = next((t for t in tenants if t.get('id') == tenant_id), None)
+            if tenant and tenant.get('check_out'):
+                try:
+                    check_out_date = datetime.fromisoformat(tenant.get('check_out').replace('Z', '+00:00'))
+                    if check_out_date.month == int(contract_month) and check_out_date.year == int(contract_year):
+                        filtered_transactions.append(trans)
+                except:
+                    pass
+        transactions = filtered_transactions
+
+    # Search functionality
+    if search_query:
+        search_lower = search_query.lower()
+        filtered_transactions = []
+        for trans in transactions:
+            tenant_id = trans.get('tenant_id')
+            tenant = next((t for t in tenants if t.get('id') == tenant_id), None)
+            if tenant and (
+                search_lower in tenant.get('tenants_name', '').lower() or
+                search_lower in trans.get('room_number', '').lower() or
+                search_lower in trans.get('floor_number', '').lower()
+            ):
+                filtered_transactions.append(trans)
+        transactions = filtered_transactions
+
+    # Calculate payment status for each transaction
+    for trans in transactions:
+        required = float(trans.get('required_amount', 0))
+        submitted = float(trans.get('submitted_amount', 0))
+        remaining = max(0, required - submitted)
+        
+        trans['payment_status'] = 'paid' if submitted >= required else 'partial'
+        trans['remaining_amount'] = remaining
+        trans['is_fully_paid'] = submitted >= required
+
+    return render_template('admin/transactions.html', 
+                          transactions=transactions, 
+                          tenants=tenants,
+                          floor_filter=floor_filter,
+                          ownership_filter=ownership_filter,
+                          contract_month=contract_month,
+                          contract_year=contract_year,
+                          search_query=search_query)
 
 @app.route('/admin/transactions/add', methods=['POST'])
+@admin_required
 def add_transaction():
     floor_number = request.form.get('floor_number')
     room_number = request.form.get('room_number')
-    tenant_name = request.form.get('tenant_name')
+    tenant_id = request.form.get('tenant_id')
     required_amount = request.form.get('required_amount')
     submitted_amount = request.form.get('submitted_amount')
+    transaction_date = request.form.get('transaction_date')
     check_in = request.form.get('check_in')
     check_out = request.form.get('check_out')
 
-    # Find tenant_id by tenant_name (optional: you can use tenant_id directly if you prefer)
-    tenant_resp = (
-        supabase.table('tenants')
-        .select('id')
-        .eq('tenants_name', tenant_name)
-        .maybe_single()
-        .execute()
-    )
-    tenant_id = tenant_resp.data['id'] if tenant_resp.data else None
+    # Normalize floor naming and types
+    if floor_number is not None:
+        fn = str(floor_number).strip().lower()
+        if fn in ['0', 'ground', 'g']:
+            floor_number = 'ground'
+
+    # Coerce numeric inputs safely
+    def to_float(val):
+        try:
+            return float(val) if val not in (None, '') else None
+        except Exception:
+            return None
+
+    required_amount_val = to_float(required_amount)
+    submitted_amount_val = to_float(submitted_amount)
+
+    # Preserve tenant_id as-is (supports UUIDs). Use None if empty
+    tenant_id_val = tenant_id if tenant_id not in (None, '') else None
+
+    tenant_name = None
+    if tenant_id:
+        tenant_resp = (
+            supabase.table('tenants')
+            .select('tenants_name')
+            .eq('id', tenant_id)
+            .maybe_single()
+            .execute()
+        )
+        tenant_name = tenant_resp.data['tenants_name'] if tenant_resp.data else None
 
     supabase.table('transactions').insert({
-        'tenant_id': tenant_id,
+        'tenant_id': tenant_id_val,
         'floor_number': floor_number,
         'room_number': room_number,
         'tenant_name': tenant_name,
-        'required_amount': required_amount,
-        'submitted_amount': submitted_amount,
+        'required_amount': required_amount_val,
+        'submitted_amount': submitted_amount_val,
+        'transaction_date': transaction_date,
         'check_in': check_in,
-        'check_out': check_out
+        'check_out': check_out,
+        'verified': True,  # Admin-added transactions are auto-verified
+        'verified_by': session['user']['id']  # Track who verified it
     }).execute()
     flash('Transaction added!', 'success')
     return redirect(url_for('admin_transactions'))
 
 @app.route('/admin/transactions/edit', methods=['POST'])
+@admin_required
+@csrf_protect
 def edit_transaction():
     trans_id = request.form.get('id')
     required_amount = request.form.get('required_amount')
     submitted_amount = request.form.get('submitted_amount')
+    transaction_date = request.form.get('transaction_date')
     check_in = request.form.get('check_in')
     check_out = request.form.get('check_out')
 
+    # Coerce numeric inputs safely
+    def to_float(val):
+        try:
+            return float(val) if val not in (None, '') else None
+        except Exception:
+            return None
+
+    required_amount_val = to_float(required_amount)
+    submitted_amount_val = to_float(submitted_amount)
+
     supabase.table('transactions').update({
-        'required_amount': required_amount,
-        'submitted_amount': submitted_amount,
+        'required_amount': required_amount_val,
+        'submitted_amount': submitted_amount_val,
+        'transaction_date': transaction_date,
         'check_in': check_in,
         'check_out': check_out
     }).eq('id', trans_id).execute()
@@ -964,6 +1221,7 @@ def edit_transaction():
     return redirect(url_for('admin_transactions'))
 
 @app.route('/admin/proofs', methods=['GET'])
+@admin_required
 def admin_proofs():
     proofs = (
         supabase.table('transaction_proofs')
@@ -991,11 +1249,13 @@ def admin_proofs_reject():
     return redirect(url_for('admin_proofs'))
 
 @app.route('/admin/finance')
+@admin_required
 def admin_finance():
-    # Fetch all transactions and maintenance requests
+    # Fetch only verified transactions and resolved maintenance requests
     transactions = (
         supabase.table('transactions')
-        .select('id, required_amount, submitted_amount, created_at')
+        .select('id, required_amount, submitted_amount, created_at, transaction_date, verified')
+        .eq('verified', True)  # Only verified transactions count towards income
         .execute()
         .data or []
     )
@@ -1012,13 +1272,18 @@ def admin_finance():
     monthly_maintenance = defaultdict(float)
 
     for t in transactions:
-        month = t['created_at'][:7]  # 'YYYY-MM'
+        month = (t.get('transaction_date') or t['created_at'])[:7]  # 'YYYY-MM'
         monthly_income[month] += float(t.get('submitted_amount') or 0)
 
     for m in maints:
         if m.get('resolved_date'):
             month = m['resolved_date'][:7]
             monthly_maintenance[month] += float(m.get('amount_used') or 0)
+
+    # Calculate totals
+    total_income = sum(monthly_income.values())
+    total_maintenance = sum(monthly_maintenance.values())
+    net_profit = total_income - total_maintenance
 
     # Prepare summary
     months = sorted(set(list(monthly_income.keys()) + list(monthly_maintenance.keys())))
@@ -1034,9 +1299,14 @@ def admin_finance():
             'net': net
         })
 
-    return render_template('admin/finance.html', summary=summary)
+    return render_template('admin/finance.html', 
+                         summary=summary, 
+                         total_income=total_income,
+                         total_maintenance=total_maintenance,
+                         net_profit=net_profit)
 
 @app.route('/admin/uploads', methods=['GET'])
+@admin_required
 def admin_uploads():
     proofs = (
         supabase.table('transaction_proofs')
@@ -1048,6 +1318,7 @@ def admin_uploads():
     return render_template('admin/proofs.html', proofs=proofs)
 
 @app.route("/admin/maintenance/hide/<req_id>", methods=["POST"])
+@admin_required
 def admin_hide_maintenance(req_id):
     admin_id = session['user']['id']
     supabase.table("admin_hidden_requests").upsert({

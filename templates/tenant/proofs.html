@@ -2,16 +2,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Proof Uploads - Tenant</title>
-  <link rel="stylesheet" href="/static/css/sidebar.css">
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
   <link rel="stylesheet" href="/static/css/tenant_proofs.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'tenant/sidebar.html' %}
-    <div class="main-section">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section" id="mainContent">
       <h1>Upload Proof of Transaction</h1>
       <form method="POST" action="/tenant/proofs/upload" enctype="multipart/form-data" class="proof-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="number" name="amount" placeholder="Enter Amount (TZS) " min="0" step="0.01" required>
         <input type="file" name="proof_file" accept="image/*,application/pdf" required>
         <textarea name="message" placeholder="Message (optional)"></textarea>
@@ -31,19 +40,12 @@
         </li>
         {% endfor %}
       </ul>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
 
-<script>
-function toggleSidebar() {
-  var sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('collapsed');
-  var mainSection = document.querySelector('.main-section');
-  if (mainSection) {
-    mainSection.classList.toggle('expanded');
-  }
-}
-</script>
-
+  <script src="/static/js/sidebar.js"></script>
 </body>
 </html>

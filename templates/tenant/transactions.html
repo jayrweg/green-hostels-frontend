@@ -1,41 +1,82 @@
-<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\tenant\transactions.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Transactions - Tenant</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
   <link rel="stylesheet" href="/static/css/tenant_transactions.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'tenant/sidebar.html' %}
-    <div class="main-section">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section" id="mainContent">
       <h1>Your Transactions</h1>
       <ul class="transaction-list">
         {% for t in transactions %}
-        <li class="{% if t.required_amount == t.submitted_amount %}transaction-complete{% endif %}">
-          <div class="trans-room">Room: {{ t.room_number }} (Floor {{ t.floor_number }})</div>
-          <div class="trans-amounts">
-            Required: ₦{{ t.required_amount }} | Submitted: ₦{{ t.submitted_amount }}
+        {% set is_paid = t.submitted_amount and t.required_amount and t.submitted_amount >= t.required_amount %}
+        <li class="transaction-item {% if is_paid %}transaction-paid{% else %}transaction-outstanding{% endif %}">
+          <div class="transaction-header">
+            <div class="trans-room">Room: {{ t.room_number }} (Floor {{ t.floor_number }})</div>
+            <div class="payment-status">
+              {% if is_paid %}
+                <span class="status-badge paid">✓ PAID</span>
+              {% else %}
+                <span class="status-badge outstanding">⚠ OUTSTANDING</span>
+              {% endif %}
+            </div>
           </div>
+          
+          <div class="trans-amounts">
+            <div class="amount-item">
+              <span class="amount-label">Required:</span>
+              <span class="amount-value">{{ t.required_amount|tsh }}</span>
+            </div>
+            <div class="amount-item">
+              <span class="amount-label">Submitted:</span>
+              <span class="amount-value">{{ t.submitted_amount|tsh }}</span>
+            </div>
+            {% if not is_paid %}
+            <div class="amount-item remaining">
+              <span class="amount-label">Remaining:</span>
+              <span class="amount-value">{{ (t.required_amount - t.submitted_amount)|tsh }}</span>
+            </div>
+            {% endif %}
+          </div>
+          
           <div class="trans-dates">
-            Check-in: {{ t.check_in }} | Check-out: {{ t.check_out }}
+            {% if t.check_in %}
+            <div class="date-item">
+              <span class="date-label">Check-in:</span>
+              <span class="date-value">{{ t.check_in }}</span>
+            </div>
+            {% endif %}
+            {% if t.check_out %}
+            <div class="date-item">
+              <span class="date-label">Check-out:</span>
+              <span class="date-value">{{ t.check_out }}</span>
+            </div>
+            {% endif %}
+            <div class="date-item">
+              <span class="date-label">Transaction Date:</span>
+              <span class="date-value">{{ t.transaction_date or t.created_at[:10] }}</span>
+            </div>
           </div>
         </li>
         {% endfor %}
       </ul>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
 
-<script>
-function toggleSidebar() {
-  var sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('collapsed');
-  var mainSection = document.querySelector('.main-section');
-  if (mainSection) {
-    mainSection.classList.toggle('expanded');
-  }
-}
-</script>
-
+  <script src="/static/js/sidebar.js"></script>
 </body>
 </html>

@@ -1,85 +1,127 @@
-<!-- admin_dashboard.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Admin Dashboard - Green House</title>
-
-  <!-- CSS Files -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/header.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/content.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/buttons.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css">
-  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
-
-    <!-- Admin Sidebar -->
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-
-    <!-- Main Section -->
-    <div class="main-section flex-column" id="mainContent">
-
-      <!-- Header -->
-      <header class="dashboard-header">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
         <div class="welcome-msg">
-          <h1>Welcome, {{ admin_name }}</h1>
+          <h1>Welcome back, {{ admin_name }}! 👋</h1>
+          <p class="sub">Here's your hostel management overview</p>
         </div>
-      </header>
 
-      <!-- Main Content -->
-      <main class="main-content">
-        <section class="dashboard-section active">
-  <div class="card-grid">
-    <div class="card">
-      <h3>Total Rooms</h3>
-      <p>{{ room_count }}</p>
-    </div>
-    <div class="card">
-      <h3>Total Tenants</h3>
-      <p>{{ tenant_count }}</p>
-    </div>
+        <!-- Key Metrics Cards -->
+        <section class="metrics-section">
+          <h2 class="section-title">📈 Hostel Overview</h2>
+          <div class="card-grid">
+            <div class="metric-card rooms-card">
+              <div class="card-icon">🏠</div>
+              <div class="card-content">
+                <div class="card-title">Total Rooms</div>
+                <div class="card-value">{{ room_count }}</div>
+                <div class="card-subtitle">Available spaces</div>
+              </div>
+            </div>
+            <div class="metric-card tenants-card">
+              <div class="card-icon">👥</div>
+              <div class="card-content">
+                <div class="card-title">Active Tenants</div>
+                <div class="card-value">{{ tenant_count }}</div>
+                <div class="card-subtitle">Current residents</div>
+              </div>
+            </div>
+            <div class="metric-card maintenance-card">
+              <div class="card-icon">🛠️</div>
+              <div class="card-content">
+                <div class="card-title">Maintenance Requests</div>
+                <div class="card-value">{{ maintenance_count }}</div>
+                <div class="card-subtitle">Pending issues</div>
+              </div>
+            </div>
+            <div class="metric-card suggestions-card">
+              <div class="card-icon">💡</div>
+              <div class="card-content">
+                <div class="card-title">New Suggestions</div>
+                <div class="card-value">{{ new_suggestions_count }}</div>
+                <div class="card-subtitle">Awaiting review</div>
+              </div>
+            </div>
+            <div class="metric-card unpaid-card">
+              <div class="card-icon">⚠️</div>
+              <div class="card-content">
+                <div class="card-title">Outstanding Payments</div>
+                <div class="card-value">{{ unpaid_tenants_count }}</div>
+                <div class="card-subtitle">Total: {{ total_outstanding_amount|tsh }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
 
-    <div class="card">
-      <h3>Maintenance Requests</h3>
-      <p>{{ maintenance_count }}</p>
+        <!-- Tips Section -->
+        <section class="tips-section">
+          <h2 class="section-title">💡 Management Tips</h2>
+          <div class="tips-grid">
+            <div class="tip-card">
+              <div class="tip-icon">📊</div>
+              <div class="tip-content">
+                <div class="tip-title">Monitor Metrics</div>
+                <div class="tip-desc">Keep track of occupancy rates and maintenance needs</div>
+              </div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon">👥</div>
+              <div class="tip-content">
+                <div class="tip-title">Tenant Communication</div>
+                <div class="tip-desc">Use announcements to keep tenants informed</div>
+              </div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon">🔧</div>
+              <div class="tip-content">
+                <div class="tip-title">Quick Response</div>
+                <div class="tip-desc">Address maintenance requests promptly</div>
+              </div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon">💰</div>
+              <div class="tip-content">
+                <div class="tip-title">Financial Tracking</div>
+                <div class="tip-desc">Monitor income and expenses regularly</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
-</section>
 
-<section class="dashboard-section">
-  <div class="dashboard-card new-suggestions-card">
-    <div class="card-title">New Suggestions</div>
-    <div class="card-value">{{ new_suggestions_count }}</div>
-  </div>
-</section>
-
-      </main>
-
-      <!-- Footer -->
-      <footer class="dashboard-footer">
-        <p>&copy; 2025 Green House System. All rights reserved.</p>
-      </footer>
-
-    </div>
-  </div>
-
-  <!-- JavaScript -->
-  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-
+  <script src="/static/js/sidebar.js"></script>
   <script>
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
-    sidebar.classList.toggle('collapsed');
-    if (mainContent) mainContent.classList.toggle('collapsed');
-  }
-</script>
+    // Add animation on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      const cards = document.querySelectorAll('.metric-card, .tip-card');
+      cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+          card.style.transition = 'all 0.6s ease';
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0)';
+        }, index * 100);
+      });
+    });
+  </script>
 </body>
 </html>

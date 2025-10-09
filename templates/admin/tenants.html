@@ -2,23 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Tenants - Green House Admin</title>
   <link rel="stylesheet" href="/static/css/base.css" />
-  <link rel="stylesheet" href="/static/css/sidebar.css" />
   <link rel="stylesheet" href="/static/css/tenants.css" />
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css">
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
-
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-
-    <div class="main-section flex-column" id="mainContent">
-      <div class="content-box">
-        <header class="dashboard-header">
-          <h1>Tenants</h1>
-        </header>
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <h1>Tenants</h1>
         <main class="main-content">
           <div class="tenants-cards-container">
             {% for tenant in tenants %}
@@ -57,6 +54,7 @@
                   <button type="button" class="btn edit" onclick='openEditTenantModal({{ tenant | tojson | safe }})'>Edit</button>
                   <!-- <button type="button" class="btn shift" onclick="openShiftRoomModal({{ tenant.id }})">Shift Room</button> -->
                   <form method="POST" action="/admin/tenants/delete/{{ tenant.id }}" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button type="submit" class="btn delete" onclick="return confirm('Delete this tenant?')">Delete</button>
                   </form>
                 </div>
@@ -66,11 +64,10 @@
           </div>
         </main>
       </div>
-      <footer class="footer">
-        <p>&copy; 2025 Green House. All rights reserved.</p>
-      </footer>
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
+  <script src="/static/js/sidebar.js"></script>
   <script>
     function toggleTenantDetails(card) {
       card.classList.toggle('expanded');
@@ -81,6 +78,7 @@
 <div id="editTenantModal" class="modal" style="display:none;">
   <div>
     <form method="POST" action="/admin/tenants/edit" enctype="multipart/form-data" id="editTenantForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="tenant_id" id="editTenantId">
       <label>Phone 1:</label>
       <input type="text" name="tenants_phone1" id="editTenantsPhone1" required>
@@ -124,6 +122,7 @@
 <div id="shiftRoomModal" class="modal" style="display:none;">
   <div>
     <form method="POST" action="/admin/tenants/shift_room" id="shiftRoomForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <input type="hidden" name="tenant_id" id="shiftTenantId">
       <input type="hidden" name="room_id" id="editRoomId">
       <label>Select New Room:</label>
@@ -151,15 +150,5 @@
 {% endwith %}
 
 <script src="/static/js/tenants.js"></script>
-
-<script>
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
-    sidebar.classList.toggle('collapsed');
-    if (mainContent) mainContent.classList.toggle('collapsed');
-  }
-</script>
-
 </body>
 </html>

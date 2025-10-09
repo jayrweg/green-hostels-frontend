@@ -39,6 +39,64 @@
 .delete-btn:hover, .clear-btn:hover {
   background: #b71c1c;
 }
+
+/* Suggestion Box Styling */
+.suggestion-form {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.suggestion-form textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+}
+
+.suggestion-form textarea:focus {
+  outline: none;
+  border-color: var(--green-500, #388e3c);
+}
+
+.suggestion-form input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.suggestion-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--green-500, #388e3c);
+}
+
+.suggestion-form button {
+  background: var(--green-500, #388e3c);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.suggestion-form button:hover {
+  background: var(--green-600, #2e7031);
+}
 .flash-messages {
   margin-bottom: 1.5rem;
   text-align: center;
@@ -100,4 +158,62 @@
 }
 .delete-btn:hover, .clear-btn:hover {
   background: #b71c1c;
+}
+
+/* Suggestion Box Styling */
+.suggestion-form {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.suggestion-form textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.3s ease;
+}
+
+.suggestion-form textarea:focus {
+  outline: none;
+  border-color: var(--green-500, #388e3c);
+}
+
+.suggestion-form input[type="text"] {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.suggestion-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--green-500, #388e3c);
+}
+
+.suggestion-form button {
+  background: var(--green-500, #388e3c);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.suggestion-form button:hover {
+  background: var(--green-600, #2e7031);
 }

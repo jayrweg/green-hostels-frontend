@@ -1,61 +1,233 @@
-<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\transactions.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Transactions - Admin</title>
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/admin_transactions.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-    <div class="main-section">
-      <h1>Manage Transactions</h1>
-      <form method="POST" action="/admin/transactions/add" class="transaction-form">
-        <input type="number" name="floor_number" placeholder="Floor Number" required>
-        <input type="text" name="room_number" placeholder="Room Number" required>
-        <input type="text" name="tenant_name" placeholder="Tenant Name" required>
-        <input type="number" name="required_amount" placeholder="Required Amount" required>
-        <input type="number" name="submitted_amount" placeholder="Amount Submitted" required>
-        <input type="date" name="check_in" placeholder="Check In Date">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <h1>Manage Transactions</h1>
+        
+        <form method="POST" action="/admin/transactions/add" class="transaction-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Tenant</label>
+        <select name="tenant_id" id="tenantSelect" required>
+            <option value="">Select Tenant</option>
+            {% for ten in tenants %}
+              <option value="{{ ten.id }}">{{ ten.tenants_name }}</option>
+            {% endfor %}
+          </select>
+        <label>Floor Number</label>
+        <input type="text" name="floor_number" id="floorInput" placeholder="Floor Number" required readonly>
+        <label>Room Number</label>
+        <input type="text" name="room_number" id="roomInput" placeholder="Room Number" required readonly>
+        <label>Required Amount (TSH)</label>
+        <input type="number" name="required_amount" placeholder="Required Amount (TSH)" required>
+        <label>Amount Submitted (TSH)</label>
+        <input type="number" name="submitted_amount" placeholder="Amount Submitted (TSH)" required>
+        <label>Transaction Date</label>
+        <input type="date" name="transaction_date" placeholder="Transaction Date" required>
+        <label>Check-out Date (optional)</label>
         <input type="date" name="check_out" placeholder="Check Out Date">
-        <button type="submit">Add Transaction</button>
-      </form>
-      <h2>All Transactions</h2>
-      <ul class="transaction-list">
-        {% for t in transactions %}
-        <li class="{% if t.required_amount == t.submitted_amount %}transaction-complete{% endif %}">
-          <div class="trans-room">Room: {{ t.room_number }} (Floor {{ t.floor_number }})</div>
-          <div class="trans-tenant">Tenant: {{ t.tenant_name }}</div>
-          <div class="trans-amounts">
-            Required: ₦{{ t.required_amount }} | Submitted: ₦{{ t.submitted_amount }}
-          </div>
-          <div class="trans-dates">
-            Check-in: {{ t.check_in }} | Check-out: {{ t.check_out }}
-          </div>
-          <form method="POST" action="/admin/transactions/edit" class="edit-form">
-            <input type="hidden" name="id" value="{{ t.id }}">
-            <input type="number" name="required_amount" value="{{ t.required_amount }}" required>
-            <input type="number" name="submitted_amount" value="{{ t.submitted_amount }}" required>
-            <input type="date" name="check_in" value="{{ t.check_in }}">
-            <input type="date" name="check_out" value="{{ t.check_out }}">
-            <button type="submit">Save</button>
+          <button type="submit">Add Transaction</button>
+        </form>
+        
+        <h2>All Transactions</h2>
+        
+        <!-- Search and Filters -->
+        <div class="filters-section">
+          <form method="GET" action="/admin/transactions" class="filter-form">
+            <!-- Search Bar -->
+            <div class="search-group">
+              <input type="text" name="search" placeholder="Search by tenant name, room, or floor..." 
+                     value="{{ search_query or '' }}" class="search-input">
+            </div>
+            
+            <!-- Filters Row -->
+            <div class="filters-row">
+              <select name="tenant_id">
+                <option value="">All Tenants</option>
+                {% for ten in tenants %}
+                  <option value="{{ ten.id }}" {% if request.args.get('tenant_id') == ten.id|string %}selected{% endif %}>{{ ten.tenants_name }}</option>
+                {% endfor %}
+              </select>
+              
+              <select name="floor">
+                <option value="">All Floors</option>
+                <option value="ground" {% if floor_filter == 'ground' %}selected{% endif %}>Ground</option>
+                <option value="1" {% if floor_filter == '1' %}selected{% endif %}>Floor 1</option>
+                <option value="2" {% if floor_filter == '2' %}selected{% endif %}>Floor 2</option>
+              </select>
+              
+              <select name="ownership">
+                <option value="">All Payments</option>
+                <option value="owned" {% if ownership_filter == 'owned' %}selected{% endif %}>Fully Paid</option>
+                <option value="not_owned" {% if ownership_filter == 'not_owned' %}selected{% endif %}>Outstanding</option>
+              </select>
+              
+              <select name="contract_month">
+                <option value="">Any Month</option>
+                {% for month in range(1, 13) %}
+                  <option value="{{ month }}" {% if contract_month == month|string %}selected{% endif %}>
+                    {{ month|month_name }}
+                  </option>
+                {% endfor %}
+              </select>
+              
+              <select name="contract_year">
+                <option value="">Any Year</option>
+                {% for year in range(2024, 2030) %}
+                  <option value="{{ year }}" {% if contract_year == year|string %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+              </select>
+              
+              <button type="submit" class="filter-btn">Apply Filters</button>
+              <a href="/admin/transactions" class="clear-btn">Clear All</a>
+            </div>
           </form>
-        </li>
-        {% endfor %}
-      </ul>
+        </div>
+        
+        <ul class="transaction-list">
+          {% for t in transactions %}
+          <li class="transaction-item {% if t.payment_status == 'paid' %}transaction-paid{% elif t.payment_status == 'partial' %}transaction-partial{% endif %}">
+            <div class="transaction-header">
+              <div class="trans-room">Room: {{ t.room_number }} (Floor {{ t.floor_number }})</div>
+              <div class="trans-tenant">Tenant: {{ t.tenant_name }}</div>
+              <div class="payment-status">
+                {% if t.payment_status == 'paid' %}
+                  <span class="status-badge paid">✓ PAID</span>
+                {% else %}
+                  <span class="status-badge partial">⚠ OUTSTANDING: {{ t.remaining_amount|tsh }}</span>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div class="trans-amounts">
+              <div class="amount-item">
+                <span class="amount-label">Required:</span>
+                <span class="amount-value">{{ t.required_amount|tsh }}</span>
+              </div>
+              <div class="amount-item">
+                <span class="amount-label">Submitted:</span>
+                <span class="amount-value">{{ t.submitted_amount|tsh }}</span>
+              </div>
+              {% if t.payment_status == 'partial' %}
+              <div class="amount-item remaining">
+                <span class="amount-label">Remaining:</span>
+                <span class="amount-value">{{ t.remaining_amount|tsh }}</span>
+              </div>
+              {% endif %}
+            </div>
+            
+            <div class="trans-dates">
+              <div class="date-item">
+                <span class="date-label">Transaction Date:</span>
+                <span class="date-value">{{ t.transaction_date or t.created_at[:10] }}</span>
+              </div>
+              {% if t.check_in %}
+              <div class="date-item">
+                <span class="date-label">Check-in:</span>
+                <span class="date-value">{{ t.check_in }}</span>
+              </div>
+              {% endif %}
+              {% if t.check_out %}
+              <div class="date-item">
+                <span class="date-label">Check-out:</span>
+                <span class="date-value">{{ t.check_out }}</span>
+              </div>
+              {% endif %}
+            </div>
+            
+            {% if t.payment_status == 'paid' %}
+              <div class="edit-form paid-transaction">
+                <div class="paid-notice">
+                  <span class="paid-icon">🔒</span>
+                  <span class="paid-text">This transaction is fully paid and cannot be edited</span>
+                </div>
+              </div>
+            {% else %}
+              <form method="POST" action="/admin/transactions/edit" class="edit-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="id" value="{{ t.id }}">
+                <div class="edit-inputs">
+                  <div class="input-group">
+                    <label>Required Amount</label>
+                    <input type="number" name="required_amount" value="{{ t.required_amount }}" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Submitted Amount</label>
+                    <input type="number" name="submitted_amount" value="{{ t.submitted_amount }}" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Transaction Date</label>
+                    <input type="date" name="transaction_date" value="{{ (t.transaction_date or t.created_at[:10]) }}">
+                  </div>
+                  <div class="input-group">
+                    <label>Check-in Date</label>
+                    <input type="date" name="check_in" value="{{ t.check_in }}">
+                  </div>
+                  <div class="input-group">
+                    <label>Check-out Date</label>
+                    <input type="date" name="check_out" value="{{ t.check_out }}">
+                  </div>
+                </div>
+                <button type="submit" class="save-btn">Save Changes</button>
+              </form>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
-<script>
-function toggleSidebar() {
-  var sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('collapsed');
-  var mainSection = document.querySelector('.main-section');
-  if (mainSection) {
-    mainSection.classList.toggle('expanded');
-  }
-}
-</script>
 
+  <script src="/static/js/sidebar.js"></script>
+  <script>
+    // Preload tenants data for autofill
+    const tenantsData = {{ tenants|tojson }};
+
+    function findTenantById(id) {
+      return (tenantsData || []).find(t => String(t.id) === String(id));
+    }
+
+    function applyTenantAutofill(tenantId) {
+      const t = findTenantById(tenantId);
+      if (!t) return;
+      // If room_id exists, try to derive floor/room from t if present (backend can be extended to include these)
+      // For now, keep existing values if not present
+      const floorInput = document.getElementById('floorInput');
+      const roomInput = document.getElementById('roomInput');
+      if (t.floor_number && floorInput) floorInput.value = t.floor_number;
+      if (t.room_number && roomInput) roomInput.value = t.room_number;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const tenantSelect = document.getElementById('tenantSelect');
+      if (tenantSelect) {
+        tenantSelect.addEventListener('change', function() {
+          if (this.value) applyTenantAutofill(this.value);
+        });
+      }
+
+      // Handle prefill from URL (?tenant_id=...)
+      const params = new URLSearchParams(window.location.search);
+      const prefillTenantId = params.get('tenant_id');
+      if (prefillTenantId && tenantSelect) {
+        tenantSelect.value = prefillTenantId;
+        applyTenantAutofill(prefillTenantId);
+      }
+    });
+  </script>
 </body>
 </html>

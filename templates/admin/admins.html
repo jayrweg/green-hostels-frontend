@@ -2,41 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Admin Accounts - Super Admin</title>
   <link rel="stylesheet" href="/static/css/base.css" />
-  <link rel="stylesheet" href="/static/css/header.css" />
-  <link rel="stylesheet" href="/static/css/sidebar.css" />
-  <link rel="stylesheet" href="/static/css/content.css" />
-  <link rel="stylesheet" href="/static/css/forms.css" />
-  <link rel="stylesheet" href="/static/css/buttons.css" />
-  <link rel="stylesheet" href="/static/css/layout.css" />
   <link rel="stylesheet" href="/static/css/admins.css" />
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css">
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
-
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-
-    <div class="main-section flex-column" id="mainContent">
-      <header class="dashboard-header">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
         <h1>Admin Accounts</h1>
-      </header>
-
-      <main class="main-content">
-        <!-- Flash messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="flash-messages">
-              {% for category, message in messages %}
-                <div class="flash-message {{ category }}">{{ message }}</div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
-
-        <section class="dashboard-section active">
+        <main class="main-content">
           <div class="card">
             <h2>Manage Admins</h2>
             <p>Add new admins, reset passwords, or remove admin accounts.</p>
@@ -126,23 +106,13 @@
               <button type="submit" class="btn shift">Update Password</button>
             </form>
           </div>
-        </section>
-      </main>
-
-      <footer class="dashboard-footer">
-        &copy; 2025 Green House. All rights reserved.
-      </footer>
+        </main>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
 
-<script>
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
-    sidebar.classList.toggle('collapsed');
-    if (mainContent) mainContent.classList.toggle('collapsed');
-  }
-</script>
-
+<script src="/static/js/sidebar.js"></script>
 </body>
 </html>

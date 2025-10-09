@@ -1,18 +1,26 @@
-<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\maintenance.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Maintenance Management</title>
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Maintenance Management - Green House Admin</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/admin_maintenance.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-    <div class="main-section"> 
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <h1>Maintenance Management</h1>
+        <main class="main-content"> 
       <div class="admin-add-request">
         <h2>Add Admin Maintenance Request</h2>
         <form method="POST" action="/admin/maintenance/admin_only">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="text" name="title" placeholder="Title" required>
           <textarea name="description" placeholder="Description" required></textarea>
           <button type="submit" class="btn admin">Add Request</button>
@@ -42,25 +50,59 @@
                 <span class="tenant-username">Submitted by: {{ req.tenant_username }}</span>
               {% endif %}
             </div>
+            
+            {% if req.status == 'pending' %}
+            <div class="resolve-form">
+              <form method="POST" action="/admin/maintenance/resolve">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="id" value="{{ req.id }}">
+                <div class="form-group">
+                  <label>Maintenance Cost (TSH):</label>
+                  <input type="number" name="amount_used" placeholder="Enter cost" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                  <label>Resolved Date:</label>
+                  <input type="date" name="resolved_date" id="resolved_date_{{ req.id }}">
+                </div>
+                <button type="submit" class="btn resolve">Mark as Resolved</button>
+              </form>
+            </div>
+            {% elif req.status == 'resolved' %}
+            <div class="resolved-info">
+              <span class="status-badge resolved">✓ Resolved</span>
+              {% if req.amount_used %}
+                <span class="cost-info">Cost: {{ req.amount_used|tsh }}</span>
+              {% endif %}
+              {% if req.resolved_date %}
+                <span class="date-info">Date: {{ req.resolved_date }}</span>
+              {% endif %}
+            </div>
+            {% endif %}
+            
             <form method="POST" action="/admin/maintenance/hide/{{ req.id }}" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <button type="submit" class="btn delete" onclick="return confirm('Hide this request from your dashboard?')">Delete</button>
             </form>
           </div>
         {% endfor %}
+        </main>
       </div>
       
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
-<script>
-function toggleSidebar() {
-  var sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('collapsed');
-  var mainSection = document.querySelector('.main-section');
-  if (mainSection) {
-    mainSection.classList.toggle('expanded');
-  }
-}
-</script>
-
+  <script src="/static/js/sidebar.js"></script>
+  <script>
+    // Set today's date for resolved date inputs
+    document.addEventListener('DOMContentLoaded', function() {
+      const today = new Date().toISOString().split('T')[0];
+      const dateInputs = document.querySelectorAll('input[type="date"]');
+      dateInputs.forEach(input => {
+        if (input.id.startsWith('resolved_date_')) {
+          input.value = today;
+        }
+      });
+    });
+  </script>
 </body>
 </html>

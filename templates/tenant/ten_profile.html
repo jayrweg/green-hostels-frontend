@@ -3,15 +3,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Tenant Profile</title>
-  <link rel="stylesheet" href="/static/css/sidebar.css">
-  <link rel="stylesheet" href="/static/css/ten_profile.css">
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="stylesheet" href="/static/css/ten_profile.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'tenant/sidebar.html' %}
-    <div class="main-section" id="mainContent">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section" id="mainContent">
       <div class="profile-container">
         <!-- Place flash messages here -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -28,6 +34,7 @@
           <div class="profile-pic">
             <img src="{{ tenant.profile_picture or url_for('static', filename='images/default-avatar.png') }}" alt="Profile Picture">
             <form method="POST" enctype="multipart/form-data" action="/tenant/profile/upload">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <input type="file" name="profile_picture" accept="image/*" required>
               <button type="submit">Upload Picture</button>
             </form>
@@ -50,6 +57,7 @@
           </div>
         </div>
         <form method="POST" action="/tenant/profile/update">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <div class="editable-section">
             <label>Phone Number:</label>
             <input type="text" name="phone" value="{{ tenant.phone or tenant.tenants_phone1 }}">
@@ -69,18 +77,12 @@
           </div>
         </form>
       </div>
-      <footer class="dashboard-footer">
-        &copy; 2025 Green House. All rights reserved.
-      </footer>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
-  <script>
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.getElementById('mainContent');
-      sidebar.classList.toggle('collapsed');
-      if (mainContent) mainContent.classList.toggle('collapsed');
-    }
-  </script>
+  
+  <script src="/static/js/sidebar.js"></script>
 </body>
 </html>

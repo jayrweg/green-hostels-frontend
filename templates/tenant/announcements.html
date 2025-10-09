@@ -5,13 +5,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Announcements - Green House Tenant</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/sidebar.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
   <link rel="stylesheet" href="/static/css/tenant_announcements.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'tenant/sidebar.html' %}
-    <div class="main-section" id="mainContent">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section" id="mainContent">
       <header class="dashboard-header">
         <h1>Announcements</h1>
       </header>
@@ -36,15 +42,12 @@
           {% endif %}
         </div>
       </main>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
-  <script>
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.getElementById('mainContent');
-      sidebar.classList.toggle('collapsed');
-      if (mainContent) mainContent.classList.toggle('collapsed');
-    }
-  </script>
+  
+  <script src="/static/js/sidebar.js"></script>
 </body>
 </html>

@@ -1,23 +1,24 @@
-<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\announcements_admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Announcements - Green House Admin</title>
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/announcements_admin.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-    <div class="main-section" id="mainContent">
-      <header class="dashboard-header">
-        <h1>Manage Announcements</h1>
-      </header>
-      <main class="main-content">
-        <div class="announcements-admin-container">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <h1>Announcements</h1>
+        <main class="main-content">
           <form method="POST" action="/admin/announcements">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="text" name="title" placeholder="Title" required>
             <textarea name="message" required placeholder="Announcement message..." rows="4"></textarea>
             <button type="submit">Post Announcement</button>
@@ -30,6 +31,7 @@
                 <div class="announcement-meta">
                   Posted on {{ ann.created_at.strftime('%Y-%m-%d') }}
                   <form method="POST" action="/admin/announcements/delete" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="id" value="{{ ann.id }}">
                     <button type="submit" class="delete-btn" onclick="return confirm('Delete this announcement?')">🗑️</button>
                   </form>
@@ -37,17 +39,13 @@
               </li>
             {% endfor %}
           </ul>
-        </div>
-      </main>
+        </main>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
-  <script>
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.getElementById('mainContent');
-      sidebar.classList.toggle('collapsed');
-      if (mainContent) mainContent.classList.toggle('collapsed');
-    }
-  </script>
+  
+  <script src="/static/js/sidebar.js"></script>
 </body>
 </html>

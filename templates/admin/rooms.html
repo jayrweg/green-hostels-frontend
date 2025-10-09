@@ -1,33 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Room Management</title>
-    <link rel="stylesheet" href="/static/css/base.css" />
-    <link rel="stylesheet" href="/static/css/header.css" />
-    <link rel="stylesheet" href="/static/css/sidebar.css" />
-    <link rel="stylesheet" href="/static/css/content.css" />
-    <link rel="stylesheet" href="/static/css/forms.css" />
-    <link rel="stylesheet" href="/static/css/buttons.css" />
-    <link rel="stylesheet" href="/static/css/layout.css" />
-    <link rel="stylesheet" href="/static/css/rooms.css" />
-    <link rel="stylesheet" href="/static/css/admin_sidebar.css">
-  </head>
-  <body>
-    <div class="dashboard-wrapper flex">
-
-      <!-- Sidebar -->
-      {% include 'admin/admin_sidebar.html' %}
-
-      <!-- Main Section -->
-      <div class="main-section flex-column" id="mainContent">
-        <!-- Header -->
-        <header class="dashboard-header">
-          <h1>Room Management</h1>
-        </header>
-
-        <!-- Content -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Room Management - Green House Admin</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/rooms.css" />
+</head>
+<body>
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
+    {% include 'admin/admin_sidebar.html' %}
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <h1>Room Management</h1>
         <main class="main-content">
           <div class="card">
             <h2>Manage Rooms</h2>
@@ -98,18 +86,17 @@
             </div>
           </div>
         </main>
-
-        <!-- Footer -->
-        <footer class="dashboard-footer">
-          <p>&copy; 2025 Green House Hostel System</p>
-        </footer>
       </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
+  </div>
 
     <!-- Edit Status Modal -->
     <div id="editModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center;">
       <div style="background:#fff; padding:2rem; border-radius:8px; min-width:300px;">
         <form method="POST" action="/admin/rooms/edit" id="editForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="room_id" id="editRoomId">
           <label for="editRoomNumber">Room Number:</label>
           <input type="text" name="room_number" id="editRoomNumber" required style="width:100%;margin-bottom:1rem;">
@@ -136,6 +123,7 @@
     <div id="addTenantModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center;">
       <div style="background:#fff; padding:2rem; border-radius:8px; min-width:350px;">
         <form method="POST" action="/admin/tenants/add" enctype="multipart/form-data" id="addTenantForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="room_id" id="addTenantRoomId">
           <label>Full Name:</label>
           <input type="text" name="tenants_name" required style="width:100%;margin-bottom:1rem;">
@@ -198,14 +186,6 @@ function closeAddTenantModal() {
   document.getElementById('addTenantModal').style.display = 'none';
 }
     </script>
-<script>
-  function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.getElementById('mainContent');
-    sidebar.classList.toggle('collapsed');
-    if (mainContent) mainContent.classList.toggle('collapsed');
-  }
-</script>
-
+  <script src="/static/js/sidebar.js"></script>
   </body>
 </html>

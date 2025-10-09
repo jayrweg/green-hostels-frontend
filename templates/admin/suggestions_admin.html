@@ -1,50 +1,48 @@
-<!-- filepath: c:\Users\USER\Desktop\Green Hostels\frontend\project-root\templates\admin\suggestions_admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
   <title>Suggestions - Green House Admin</title>
-  <link rel="stylesheet" href="/static/css/admin_sidebar.css" />
+  <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/suggestions_admin.css" />
 </head>
 <body>
-  <div class="dashboard-wrapper flex">
+  {% include 'includes/global_header.html' %}
+  
+  <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-    <div class="main-section" id="mainContent">
-      <header class="dashboard-header">
+    
+    <div class="main-content-wrapper">
+      <div class="main-section">
         <h1>Tenant Suggestions</h1>
-      </header>
-      <main class="main-content">
-        <div class="suggestions-admin-container">
-          <form method="POST" action="/admin/suggestions/clear" style="margin-bottom:1rem;">
-            <button type="submit" class="clear-btn" onclick="return confirm('Clear all suggestions?')">Clear All</button>
-          </form>
-          <ul class="suggestion-list">
-            {% for s in suggestions %}
-              <li>
-                <div class="suggestion-message">{{ s.message }}</div>
-                <div class="suggestion-meta">
-                  From: {{ s.tenant_name or 'Unknown' }} | {{ s.created_at.strftime('%Y-%m-%d') }}
-                  <form method="POST" action="/admin/suggestions/mark_read" style="display:inline;">
-                    <input type="hidden" name="id" value="{{ s.id }}">
-                    <button type="submit" class="mark-read-btn" {% if s.id in admin_read_suggestions %}disabled{% endif %}>Mark as Read</button>
-                  </form>
-                </div>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </main>
+        <main class="main-content">
+          <div class="suggestions-admin-container">
+            <form method="POST" action="/admin/suggestions/clear" style="margin-bottom:1rem;">
+              <button type="submit" class="clear-btn" onclick="return confirm('Clear all suggestions?')">Clear All</button>
+            </form>
+            <ul class="suggestion-list">
+              {% for s in suggestions %}
+                <li>
+                  <div class="suggestion-message">{{ s.message }}</div>
+                  <div class="suggestion-meta">
+                    From: {{ s.tenant_name or 'Unknown' }} | {{ s.created_at.strftime('%Y-%m-%d') }}
+                    <form method="POST" action="/admin/suggestions/mark_read" style="display:inline;">
+                      <input type="hidden" name="id" value="{{ s.id }}">
+                      <button type="submit" class="mark-read-btn" {% if s.id in admin_read_suggestions %}disabled{% endif %}>Mark as Read</button>
+                    </form>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </main>
+      </div>
+      
+      {% include 'includes/global_footer.html' %}
     </div>
   </div>
-  <script>
-    function toggleSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.getElementById('mainContent');
-      sidebar.classList.toggle('collapsed');
-      if (mainContent) mainContent.classList.toggle('collapsed');
-    }
-  </script>
+  
+  <script src="/static/js/sidebar.js"></script>
 </body>
 </html>

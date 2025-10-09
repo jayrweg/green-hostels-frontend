@@ -1,7 +1,7 @@
 .sidebar {
   width: 240px; /* increased width */
   min-width: 200px;
-  background: #388e3c;
+  background: var(--green-500, #388e3c);
   color: #fff;
   height: 100vh;
   position: fixed;
@@ -79,7 +79,7 @@
 
 .menu a.active,
 .menu a:hover {
-  background: #2e7031;
+  background: var(--green-600, #2e7031);
   border-left: 4px solid #fff;
   color: #fff;
 }
