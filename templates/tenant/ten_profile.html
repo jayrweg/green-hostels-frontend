@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <title>Tenant Profile</title>
+  <title>Tenant Profile <i>(Wasifu)</i></title>
   <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/sidebar.css" />
   <link rel="stylesheet" href="/static/css/layout.css" />
@@ -29,51 +29,51 @@
             </div>
           {% endif %}
         {% endwith %}
-        <h2>My Profile</h2>
+        <h2>My Profile <i>(Wasifu)</i></h2>
         <div class="profile-header">
           <div class="profile-pic">
             <img src="{{ tenant.profile_picture or url_for('static', filename='images/default-avatar.png') }}" alt="Profile Picture">
             <form method="POST" enctype="multipart/form-data" action="/tenant/profile/upload">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <input type="file" name="profile_picture" accept="image/*" required>
-              <button type="submit">Upload Picture</button>
+              <button type="submit">Upload Picture <i>(Pakia picha)</i></button>
             </form>
           </div>
         </div>
         <div class="profile-details">
-          <div><strong>Name:</strong> {{ tenant.tenants_name }}</div>
-          <div><strong>Room:</strong> {{ room.room_number if room else '-' }}</div>
-          <div><strong>Floor:</strong> {{ room.floor_number if room else '-' }}</div>
+          <div><strong>Name: <i>(Jina)</i></strong> {{ tenant.tenants_name }}</div>
+          <div><strong>Room: <i>(Chumba)</i></strong> {{ room.room_number if room else '-' }}</div>
+          <div><strong>Floor: <i>(Ghorofa)</i></strong> {{ room.floor_number if room else '-' }}</div>
           <div><strong>Email:</strong> {{ tenant.tenants_email }}</div>
-          <div><strong>National ID:</strong> {{ tenant.national_id }}</div>
-          <div><strong>Check In:</strong> {{ tenant.check_in }}</div>
-          <div><strong>Check Out:</strong> {{ tenant.check_out }}</div>
-          <div><strong>Contract:</strong>
+          <div><strong>National ID: <i>(NIDA)</i></strong> {{ tenant.national_id }}</div>
+          <div><strong>Check In: <i>(Tarehe ya kuingia)</i></strong> {{ tenant.check_in }}</div>
+          <div><strong>Check Out: <i>(Tarehe ya kutoka)</i></strong> {{ tenant.check_out }}</div>
+          <div><strong>Contract: <i>(Mkataba)</i></strong>
             {% if tenant.contract_url %}
-              <a href="{{ tenant.contract_url }}" target="_blank" class="contract-btn">View / Download Contract</a>
+              <a href="{{ tenant.contract_url }}" target="_blank" class="contract-btn">View / Download Contract <i>(Tazama / Pakua mkataba)</i></a>
             {% else %}
-              <button class="contract-btn" disabled>No Contract Available</button>
+              <button class="contract-btn" disabled>No Contract Available <i>(Hakuna Mkataba Uliopatikana)</i></button>
             {% endif %}
           </div>
         </div>
         <form method="POST" action="/tenant/profile/update">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <div class="editable-section">
-            <label>Phone Number:</label>
+            <label>Phone Number: <i>(Nambari ya simu)</i></label>
             <input type="text" name="phone" value="{{ tenant.phone or tenant.tenants_phone1 }}">
             <hr>
-            <h4>Emergency Contacts</h4>
+            <h4>Emergency Contacts <i>(Nambari ya dharura)</i></h4>
             {% for ec in emergency_contacts %}
               <input type="hidden" name="contact_id" value="{{ ec.id }}">
-              <label>Name:</label>
+              <label>Name: <i>(Jina)</i></label>
               <input type="text" name="emergency_name" value="{{ ec.emergency_contact_name }}">
-              <label>Phone:</label>
+              <label>Phone: <i>(Namba)</i></label>
               <input type="text" name="emergency_phone" value="{{ ec.emergency_contact_phone }}">
-              <label>Relation:</label>
+              <label>Relation: <i>(Uhusiano)</i></label>
               <input type="text" name="relation" value="{{ ec.relation }}">
               {% if not loop.last %}<hr>{% endif %}
             {% endfor %}
-            <button type="submit">Update Contacts</button>
+            <button type="submit">Update Contacts <i>(Badilisha taarifa)</i></button>
           </div>
         </form>
       </div>

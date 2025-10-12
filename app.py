@@ -391,7 +391,7 @@ def admin_contracts():
 
 
 @app.route("/admin/contracts/upload", methods=["POST"])
-@admin_required
+@superadmin_only
 def upload_contract():
     if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
         return redirect("/login")
@@ -441,7 +441,7 @@ def admin_maintenance():
     return render_template('admin/maintenance.html', requests=requests)
 
 @app.route('/admin/maintenance/resolve', methods=['POST'])
-@admin_required
+@superadmin_only
 @csrf_protect
 def admin_maintenance_resolve():
     req_id = request.form.get('id')
@@ -513,7 +513,7 @@ def admin_announcements():
     return render_template('admin/announcements_admin.html', announcements=announcements)
 
 @app.route('/admin/announcements/delete', methods=['POST'])
-@admin_required
+@superadmin_only
 @csrf_protect
 def delete_announcement():
     ann_id = request.form.get('id')
@@ -524,7 +524,7 @@ def delete_announcement():
 
 
 @app.route('/admin/suggestions')
-@admin_required
+@superadmin_only
 def admin_suggestions():
     admin_id = session['user']['id']
     # Fetch hidden suggestions from DB (optional, if you persist this)
@@ -703,7 +703,7 @@ def add_tenant():
 
 # ---------- Tenants: Delete ----------
 @app.route("/admin/tenants/delete/<tenant_id>", methods=["POST"])
-@admin_required
+@superadmin_only
 def delete_tenant(tenant_id):
     if "user" not in session or session["user"]["role"] not in ["admin", "superadmin"]:
         return redirect("/login")
@@ -1132,7 +1132,7 @@ def admin_transactions():
                           search_query=search_query)
 
 @app.route('/admin/transactions/add', methods=['POST'])
-@admin_required
+@superadmin_only
 def add_transaction():
     floor_number = request.form.get('floor_number')
     room_number = request.form.get('room_number')
@@ -1190,7 +1190,7 @@ def add_transaction():
     return redirect(url_for('admin_transactions'))
 
 @app.route('/admin/transactions/edit', methods=['POST'])
-@admin_required
+@superadmin_only
 @csrf_protect
 def edit_transaction():
     trans_id = request.form.get('id')
@@ -1249,7 +1249,7 @@ def admin_proofs_reject():
     return redirect(url_for('admin_proofs'))
 
 @app.route('/admin/finance')
-@admin_required
+@superadmin_only
 def admin_finance():
     # Fetch only verified transactions and resolved maintenance requests
     transactions = (
@@ -1318,7 +1318,7 @@ def admin_uploads():
     return render_template('admin/proofs.html', proofs=proofs)
 
 @app.route("/admin/maintenance/hide/<req_id>", methods=["POST"])
-@admin_required
+@superadmin_only
 def admin_hide_maintenance(req_id):
     admin_id = session['user']['id']
     supabase.table("admin_hidden_requests").upsert({

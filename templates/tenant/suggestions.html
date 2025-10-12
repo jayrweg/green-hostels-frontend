@@ -19,21 +19,21 @@
     <div class="main-content-wrapper">
       <div class="main-section" id="mainContent">
       <header class="dashboard-header">
-        <h1>Suggestion Box</h1>
+        <h1>Suggestion Box <i>(Sanduku la Maoni)</i></h1>
       </header>
       <main class="main-content">
         <div class="suggestions-container">
           <form method="POST" action="/tenant/suggestions" class="suggestion-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="text" name="title" placeholder="Suggestion Title (optional)" maxlength="100">
-            <textarea name="message" required placeholder="Describe your suggestion in detail... Share your ideas to help improve the hostel experience for everyone!" rows="6"></textarea>
-            <button type="submit">Submit Suggestion</button>
+            <input type="text" name="title" placeholder="Suggestion Title (optional) / Kichwa cha Pendekezo (hiari)" maxlength="100">
+            <textarea name="message" required placeholder="Describe your suggestion in detail... Share your ideas to help improve the hostel experience for everyone! / Eleza pendekezo lako kwa undani...Shiriki mawazo yako ili kuboresha maisha ya nyumba kwa wote!" rows="6"></textarea>
+            <button type="submit">Submit Suggestion <i>(Wasilisha maoni)</i></button>
           </form>
           <form method="POST" action="/tenant/suggestions/clear" style="margin-bottom:1rem;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button type="submit" class="clear-btn" onclick="return confirm('Clear all your suggestions?')">Clear All</button>
+            <button type="submit" class="clear-btn" onclick="return confirm('Clear all your suggestions? / Futa mapendekezo yako yote?')">Clear All <i>(Futa Yote)</i></button>
           </form>
-          <p class="info-text">Your suggestion will be visible to admins only.</p>
+          <p class="info-text">Your suggestion will be visible to LandLord only. <i>(Maoni yako yataonekana na mwenye nyumba tu pasipo taarifa zako!)</i></p>
           <ul class="suggestion-list">
             {% for s in suggestions %}
               <li>
@@ -43,7 +43,7 @@
                   <form method="POST" action="/tenant/suggestions/delete" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="id" value="{{ s.id }}">
-                    <button type="submit" class="delete-btn" onclick="return confirm('Delete this suggestion?')">🗑️</button>
+                    <button type="submit" class="delete-btn" onclick="return confirm('Delete this suggestion? / Futa pendekezo hili?')">🗑️</button>
                   </form>
                 </div>
               </li>

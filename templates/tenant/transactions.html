@@ -17,34 +17,34 @@
     
     <div class="main-content-wrapper">
       <div class="main-section" id="mainContent">
-      <h1>Your Transactions</h1>
+      <h1>Your Transactions <i>(Miamala yako)</i></h1>
       <ul class="transaction-list">
         {% for t in transactions %}
         {% set is_paid = t.submitted_amount and t.required_amount and t.submitted_amount >= t.required_amount %}
         <li class="transaction-item {% if is_paid %}transaction-paid{% else %}transaction-outstanding{% endif %}">
           <div class="transaction-header">
-            <div class="trans-room">Room: {{ t.room_number }} (Floor {{ t.floor_number }})</div>
+            <div class="trans-room">Room: <i>(Chumba)</i> {{ t.room_number }} (Floor <i>(Ghorofa)</i> {{ t.floor_number }})</div>
             <div class="payment-status">
               {% if is_paid %}
-                <span class="status-badge paid">✓ PAID</span>
+                <span class="status-badge paid">✓ PAID <i>(Imelipwa)</i></span>
               {% else %}
-                <span class="status-badge outstanding">⚠ OUTSTANDING</span>
+                <span class="status-badge outstanding">⚠ OUTSTANDING <i>(Deni)</i></span>
               {% endif %}
             </div>
           </div>
           
           <div class="trans-amounts">
             <div class="amount-item">
-              <span class="amount-label">Required:</span>
+              <span class="amount-label">Required: <i>(Inahitajika)</i></span>
               <span class="amount-value">{{ t.required_amount|tsh }}</span>
             </div>
             <div class="amount-item">
-              <span class="amount-label">Submitted:</span>
+              <span class="amount-label">Submitted: <i>(Imewasilishwa)</i></span>
               <span class="amount-value">{{ t.submitted_amount|tsh }}</span>
             </div>
             {% if not is_paid %}
             <div class="amount-item remaining">
-              <span class="amount-label">Remaining:</span>
+              <span class="amount-label">Remaining:<i>(Imebaki)</i></span>
               <span class="amount-value">{{ (t.required_amount - t.submitted_amount)|tsh }}</span>
             </div>
             {% endif %}
@@ -53,18 +53,18 @@
           <div class="trans-dates">
             {% if t.check_in %}
             <div class="date-item">
-              <span class="date-label">Check-in:</span>
+              <span class="date-label">Check-in: <i>(Kuingia)</i></span>
               <span class="date-value">{{ t.check_in }}</span>
             </div>
             {% endif %}
             {% if t.check_out %}
             <div class="date-item">
-              <span class="date-label">Check-out:</span>
+              <span class="date-label">Check-out: <i>(Kutoka)</i></span>
               <span class="date-value">{{ t.check_out }}</span>
             </div>
             {% endif %}
             <div class="date-item">
-              <span class="date-label">Transaction Date:</span>
+              <span class="date-label">Transaction Date: <i>(Tarehe ya muamala)</i></span>
               <span class="date-value">{{ t.transaction_date or t.created_at[:10] }}</span>
             </div>
           </div>

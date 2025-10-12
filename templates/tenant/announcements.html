@@ -19,7 +19,7 @@
     <div class="main-content-wrapper">
       <div class="main-section" id="mainContent">
       <header class="dashboard-header">
-        <h1>Announcements</h1>
+        <h1>Announcements <i>(Matangazo)</i></h1>
       </header>
       <main class="main-content">
         <div class="announcements-container">
@@ -29,16 +29,16 @@
                 <li>
                   <div class="announcement-title">{{ ann.title }}</div>
                   <div class="announcement-message">{{ ann.message }}</div>
-                  <div class="announcement-meta">Posted on {{ ann.created_at.strftime('%Y-%m-%d') }}</div>
+                  <div class="announcement-meta">Posted on <i>(Imechapishwa tarehe)</i> {{ ann.created_at.strftime('%Y-%m-%d') }}</div>
                   <form method="POST" action="/tenant/announcements/mark_read" style="display:inline;">
                     <input type="hidden" name="id" value="{{ ann.id }}">
-                   <button type="submit" class="mark-read-btn" {% if ann.id in tenant_read_announcements %}disabled{% endif %}>Mark as Read</button>
+                   <button type="submit" class="mark-read-btn" {% if ann.id in tenant_read_announcements %}disabled{% endif %}>Mark as Read <i>(Weka alama kuwa imesomwa)</i></button>
                   </form>
                 </li>
               {% endfor %}
             </ul>
           {% else %}
-            <p>No announcements yet.</p>
+            <p>No announcements yet. <i>(Hakuna matangazo bado)</i></p>
           {% endif %}
         </div>
       </main>

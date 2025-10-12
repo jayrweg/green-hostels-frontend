@@ -18,14 +18,14 @@
     
     <div class="main-content-wrapper">
       <div class="main-section" id="mainContent">
-      <h1>Report Maintenance Issue</h1>
+      <h1>Report Maintenance Issue <i>(Ripoti Tatizo la Matengenezo)</i></h1>
       <form method="POST" action="/tenant/maintenance">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <input type="text" name="title" placeholder="Issue Title" required>
-        <textarea name="description" placeholder="Describe the issue..." required></textarea>
-        <button type="submit">Submit Request</button>
+        <input type="text" name="title" placeholder="Issue Title / Kichwa cha Tatizo" required>
+        <textarea name="description" placeholder="Describe the issue... / Eleza tatizo..." required></textarea>
+        <button type="submit">Submit Request <i>(Wasilisha Ombi )</i></button>
       </form>
-      <h2>Your Requests</h2>
+      <h2>Your Requests <i>(Maombi Yako)</i></h2>
       <div class="maintenance-list">
         {% for req in requests %}
           <div class="maintenance-card">
@@ -36,7 +36,7 @@
             <div>{{ req.description }}</div>
             <form method="POST" action="/tenant/maintenance/hide/{{ req.id }}" style="display:inline;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-              <button type="submit" class="btn delete" onclick="return confirm('Hide this request from your dashboard?')">Delete</button>
+              <button type="submit" class="btn delete" onclick="return confirm('Hide this request from your dashboard?')">Delete <i>(Futa)</i></button>
            </form>
           </div>
         {% endfor %}
