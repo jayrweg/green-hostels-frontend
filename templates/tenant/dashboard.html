@@ -18,51 +18,51 @@
     <div class="main-content-wrapper">
       <div class="main-section">
         <div class="welcome-msg">
-          <h1>Welcome back, {{ tenant_name }}! 🏠</h1>
-          <p class="sub">Here's what's happening in your hostel</p>
+          <h1>Welcome back <i>(Karibu)</i>, {{ tenant_name }}! 🏠</h1>
+          <p class="sub">Here's what's happening in your hostel <i>(Hapa ni taarifa za hosteli yako)</i></p>
         </div>
 
         <!-- Personal Stats -->
         <section class="personal-stats-section">
-          <h2 class="section-title">📊 Your Overview</h2>
+          <h2 class="section-title">📊 Your Overview <i>(Muhtasari)</i></h2>
           <div class="card-grid">
             <div class="personal-card announcements-card">
               <div class="card-icon">📢</div>
               <div class="card-content">
-                <div class="card-title">New Announcements</div>
+                <div class="card-title">New Announcements <i>(Matangazo mapya)</i></div>
                 <div class="card-value">{{ new_announcements_count }}</div>
-                <div class="card-subtitle">Unread messages</div>
+                <div class="card-subtitle">Unread messages <i>(Ujumbe mpya)</i></div>
               </div>
             </div>
             <div class="personal-card profile-card">
               <div class="card-icon">👤</div>
               <div class="card-content">
-                <div class="card-title">Profile Status</div>
-                <div class="card-value">Complete</div>
+                <div class="card-title">Profile Status <i>(Wasifu)</i></div>
+                <div class="card-value">Complete✅</div>
                 <div class="card-subtitle">All info updated</div>
               </div>
             </div>
             <div class="personal-card contract-card">
               <div class="card-icon">📄</div>
               <div class="card-content">
-                <div class="card-title">Contract Status</div>
-                <div class="card-value">Active</div>
-                <div class="card-subtitle">Valid agreement</div>
+                <div class="card-title">Contract Status <i>(Mkataba)</i></div>
+                <div class="card-value">Active <i>(Unaendelea)</i></div>
+                <div class="card-subtitle">Valid agreement✅</div>
               </div>
             </div>
             <div class="personal-card payments-card {% if payment_status == 'partial' %}outstanding{% endif %}">
               <div class="card-icon">💳</div>
               <div class="card-content">
-                <div class="card-title">Payment Status</div>
+                <div class="card-title">Payment Status <i>(Malipo)</i></div>
                 {% if payment_status == 'paid' %}
-                  <div class="card-value paid">✓ PAID</div>
-                  <div class="card-subtitle">All dues cleared</div>
+                  <div class="card-value paid">✓ PAID✅</div>
+                  <div class="card-subtitle">All dues cleared <i>(Malipo yote yamelipwa)</i></div>
                 {% elif payment_status == 'partial' %}
-                  <div class="card-value outstanding">⚠ OUTSTANDING</div>
-                  <div class="card-subtitle">Remaining: {{ remaining_amount|tsh }}</div>
+                  <div class="card-value outstanding">⚠ OUTSTANDING <i>(Deni)</i></div>
+                  <div class="card-subtitle">Remaining: <i>(Kiasi kilichobaki)</i> {{ remaining_amount|tsh }}</div>
                 {% else %}
-                  <div class="card-value">No Transaction</div>
-                  <div class="card-subtitle">Contact admin</div>
+                  <div class="card-value">No Transaction <i>(Malipo)</i></div>
+                  <div class="card-subtitle">Contact admin <i>(Wasiliana na msimamizi)</i></div>
                 {% endif %}
               </div>
             </div>
@@ -72,7 +72,7 @@
               <div class="card-content">
                 <div class="card-title">Contract Due Date</div>
                 <div class="card-value">{{ farthest_due_date[:10] }}</div>
-                <div class="card-subtitle">Latest check-out date</div>
+                <div class="card-subtitle">Latest check-out date <i>(Malipo)</i></div>
               </div>
             </div>
             {% endif %}
@@ -81,34 +81,34 @@
 
         <!-- Payment Summary Section -->
         <section class="payment-summary-section">
-          <h2 class="section-title">💰 Payment Summary</h2>
+          <h2 class="section-title">💰 Payment Summary <i>(Muhtasari wa malipo)</i></h2>
           <div class="summary-grid">
             {% if payment_status == 'paid' %}
             <div class="summary-card paid-summary">
               <div class="summary-icon">✅</div>
               <div class="summary-content">
-                <div class="summary-title">Payment Complete</div>
-                <div class="summary-description">All your dues have been cleared. You're all set!</div>
-                <div class="summary-status">Status: Fully Paid</div>
+                <div class="summary-title">Payment Complete <i>(Malipo yamekamilika)</i></div>
+                <div class="summary-description">All your dues have been cleared. You're all set! <i>(Malipo yako yote yamelipwa. Uko tayari kabisa!)</i></div>
+                <div class="summary-status">Status: Fully Paid ✅</div>
               </div>
             </div>
             {% elif payment_status == 'partial' %}
             <div class="summary-card outstanding-summary">
               <div class="summary-icon">⚠️</div>
               <div class="summary-content">
-                <div class="summary-title">Outstanding Payment</div>
-                <div class="summary-description">You have remaining dues to clear</div>
-                <div class="summary-amount">Remaining: {{ remaining_amount|tsh }}</div>
-                <div class="summary-action">Please contact admin to make payment</div>
+                <div class="summary-title">Outstanding Payment <i>(Deni)</i></div>
+                <div class="summary-description">You have remaining dues to clear <i>(Una malipo yaliyosalia kulipwa)</i></div>
+                <div class="summary-amount">Remaining:<i>(Imesalia)</i> {{ remaining_amount|tsh }}</div>
+                <div class="summary-action">Please contact admin to make payment <i>(Tafadhali wasiliana na msimamizi kufanya malipo)</i></div>
               </div>
             </div>
             {% else %}
             <div class="summary-card no-transaction-summary">
               <div class="summary-icon">ℹ️</div>
               <div class="summary-content">
-                <div class="summary-title">No Transaction Record</div>
-                <div class="summary-description">No payment records found in the system</div>
-                <div class="summary-action">Please contact admin to set up your payment</div>
+                <div class="summary-title">No Transaction Record <i>(Hakuna rekodi ya malipo)</i></div>
+                <div class="summary-description">No payment records found in the system <i>(HHakuna rekodi za malipo zilizopatikana kwenye mfumo)</i></div>
+                <div class="summary-action">Please contact admin to set up your payment <i>(Tafadhali wasiliana na msimamizi kupanga malipo yako)</i></div>
               </div>
             </div>
             {% endif %}
@@ -117,9 +117,9 @@
             <div class="summary-card due-date-summary">
               <div class="summary-icon">📅</div>
               <div class="summary-content">
-                <div class="summary-title">Contract Information</div>
+                <div class="summary-title">Contract Information <i>(Taarifa za mkataba)</i></div>
                 <div class="summary-description">Your contract details</div>
-                <div class="summary-date">Due Date: {{ farthest_due_date[:10] }}</div>
+                <div class="summary-date">Due Date: <i>(Tarehe ya mwisho ya mkataba)</i> {{ farthest_due_date[:10] }}</div>
                 <div class="summary-note">Check-out date for your current contract</div>
               </div>
             </div>
@@ -129,34 +129,34 @@
 
         <!-- Tips Section -->
         <section class="tips-section">
-          <h2 class="section-title">💡 Quick Tips</h2>
+          <h2 class="section-title">💡 Quick Tips <i>(Vidokezo vya haraka)</i></h2>
           <div class="tips-grid">
             <div class="tip-card">
               <div class="tip-icon">📱</div>
               <div class="tip-content">
                 <div class="tip-title">Stay Updated</div>
-                <div class="tip-desc">Check announcements regularly for important updates</div>
+                <div class="tip-desc">Check announcements regularly for important updates <i>(Angalia matangazo mara kwa mara)</i></div>
               </div>
             </div>
             <div class="tip-card">
               <div class="tip-icon">🔧</div>
               <div class="tip-content">
                 <div class="tip-title">Report Issues</div>
-                <div class="tip-desc">Use the maintenance section to report any problems</div>
+                <div class="tip-desc">Use the maintenance section to report any problems <i>(Tumia sehemu ya matengenezo kuripoti tatizo)</i></div>
               </div>
             </div>
             <div class="tip-card">
               <div class="tip-icon">💡</div>
               <div class="tip-content">
                 <div class="tip-title">Share Ideas</div>
-                <div class="tip-desc">Your suggestions help improve the hostel experience</div>
+                <div class="tip-desc">Your suggestions help improve the hostel experience <i>(Toa maoni kusaidia kuboresha huduma ya hosteli)</i></div>
               </div>
             </div>
             <div class="tip-card">
               <div class="tip-icon">📄</div>
               <div class="tip-content">
                 <div class="tip-title">Keep Records</div>
-                <div class="tip-desc">Upload payment proofs to maintain your records</div>
+                <div class="tip-desc">Upload payment proofs to maintain your records <i>(Ambatanisha ushahidi wa malipo unaporekodi malipo)</i></div>
               </div>
             </div>
           </div>
