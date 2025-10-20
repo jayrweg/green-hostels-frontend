@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Tenant Maintenance - Admin</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/admin_maintenance.css" />
+</head>
+<body>
+  {% include 'includes/global_header.html' %}
+  <div class="main-layout">
+    {% include 'admin/admin_sidebar.html' %}
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <h1>Maintenance for {{ tenant.tenants_name if tenant else 'Tenant' }}</h1>
+        <main class="main-content">
+          <div class="maintenance-list">
+            {% for req in requests %}
+              <div class="maintenance-card {% if req.is_admin_only %}admin-only{% else %}tenant-only{% endif %}">
+                <div>
+                  <strong>{{ req.title }}</strong>
+                  <span class="request-date">{{ req.created_at.strftime('%Y-%m-%d') if req.created_at.strftime else req.created_at }}</span>
+                </div>
+                <div>{{ req.description }}</div>
+                <div>
+                  {% if req.is_admin_only %}
+                    <span class="badge admin">Admin Request</span>
+                  {% else %}
+                    <span class="badge tenant">Tenant Request</span>
+                  {% endif %}
+                </div>
+
+                {% if req.status == 'pending' %}
+                  <div class="resolve-form">
+                    <form method="POST" action="/admin/maintenance/resolve">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                      <input type="hidden" name="id" value="{{ req.id }}">
+                      <div class="form-group">
+                        <label>Maintenance Cost (TSH):</label>
+                        <input type="number" name="amount_used" placeholder="Enter cost" step="0.01" min="0">
+                      </div>
+                      <div class="form-group">
+                        <label>Resolved Date:</label>
+                        <input type="date" name="resolved_date">
+                      </div>
+                      <button type="submit" class="btn resolve">Mark as Resolved</button>
+                    </form>
+                  </div>
+                {% endif %}
+
+                <div class="actions-row">
+                  <form method="POST" action="/admin/tenants/{{ tenant.id }}/maintenance/seen" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="id" value="{{ req.id }}">
+                    <button type="submit" class="btn">Mark as Seen</button>
+                  </form>
+                  <form method="POST" action="/admin/tenants/{{ tenant.id }}/maintenance/reply" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="id" value="{{ req.id }}">
+                    <input type="text" name="reply" placeholder="Write a reply" required>
+                    <button type="submit" class="btn edit">Reply</button>
+                  </form>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </main>
+      </div>
+      {% include 'includes/global_footer.html' %}
+    </div>
+  </div>
+  <script src="/static/js/sidebar.js"></script>
+</body>
+</html>
+
+
+

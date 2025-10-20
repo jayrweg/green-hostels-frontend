@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Tenant Transactions - Admin</title>
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/admin_transactions.css" />
+</head>
+<body>
+  {% include 'includes/global_header.html' %}
+  <div class="main-layout">
+    {% include 'admin/admin_sidebar.html' %}
+    <div class="main-content-wrapper">
+      <div class="main-section">
+        <h1>Transactions for {{ tenant.tenants_name if tenant else 'Tenant' }}</h1>
+        <main class="main-content">
+          <a class="go-trans-btn" href="/admin/transactions?tenant_id={{ tenant.id }}">Go to Transactions</a>
+          <ul class="transaction-list">
+            {% for t in transactions %}
+            <li class="transaction-item {% if t.payment_status == 'paid' %}transaction-paid{% elif t.payment_status == 'partial' %}transaction-partial{% endif %}">
+              <div class="transaction-header">
+                <div class="trans-room">Room: {{ t.room_number }} (Floor {{ t.floor_number }})</div>
+                <div class="trans-tenant">Tenant: {{ tenant.tenants_name }}</div>
+                <div class="payment-status">
+                  {% if t.payment_status == 'paid' %}
+                    <span class="status-badge paid">✓ PAID</span>
+                  {% else %}
+                    <span class="status-badge partial">⚠ OUTSTANDING: {{ t.remaining_amount|tsh }}</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="trans-amounts">
+                <div class="amount-item">
+                  <span class="amount-label">Required:</span>
+                  <span class="amount-value">{{ t.required_amount|tsh }}</span>
+                </div>
+                <div class="amount-item">
+                  <span class="amount-label">Submitted:</span>
+                  <span class="amount-value">{{ t.submitted_amount|tsh }}</span>
+                </div>
+                {% if t.payment_status == 'partial' %}
+                <div class="amount-item remaining">
+                  <span class="amount-label">Remaining:</span>
+                  <span class="amount-value">{{ t.remaining_amount|tsh }}</span>
+                </div>
+                {% endif %}
+              </div>
+              <div class="trans-dates">
+                <div class="date-item">
+                  <span class="date-label">Transaction Date:</span>
+                  <span class="date-value">{{ t.transaction_date or t.created_at[:10] }}</span>
+                </div>
+                {% if t.check_in %}
+                <div class="date-item">
+                  <span class="date-label">Check-in:</span>
+                  <span class="date-value">{{ t.check_in }}</span>
+                </div>
+                {% endif %}
+                {% if t.check_out %}
+                <div class="date-item">
+                  <span class="date-label">Check-out:</span>
+                  <span class="date-value">{{ t.check_out }}</span>
+                </div>
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </main>
+      </div>
+      {% include 'includes/global_footer.html' %}
+    </div>
+  </div>
+  <script src="/static/js/sidebar.js"></script>
+</body>
+</html>
+
+
+

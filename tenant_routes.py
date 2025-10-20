@@ -76,13 +76,31 @@ def tenant_dashboard():
                 if not farthest_due_date or trans.get('check_out') > farthest_due_date:
                     farthest_due_date = trans.get('check_out')
     
+    # Pull most recent admin reply to maintenance if stored
+    latest_reply = None
+    try:
+        replies_resp = (
+            supabase.table('maintenance_requests')
+            .select('admin_reply')
+            .eq('tenant_id', tenant_id)
+            .order('updated_at', desc=True)
+            .limit(1)
+            .execute()
+        )
+        rows = replies_resp.data or []
+        if rows and rows[0].get('admin_reply'):
+            latest_reply = rows[0]['admin_reply']
+    except Exception:
+        latest_reply = None
+
     return render_template("tenant/dashboard.html", 
                          tenant_name=tenant_name, 
                          new_announcements_count=new_announcements_count,
                          payment_status=payment_status,
                          remaining_amount=remaining_amount,
                          due_date=due_date,
-                         farthest_due_date=farthest_due_date)
+                         farthest_due_date=farthest_due_date,
+                         latest_maintenance_reply=latest_reply)
 
 @tenant_bp.route('/profile')
 def profile():

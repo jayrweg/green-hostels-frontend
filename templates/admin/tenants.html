@@ -57,6 +57,9 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button type="submit" class="btn delete" onclick="return confirm('Delete this tenant?')">Delete</button>
                   </form>
+                  <a class="btn" style="margin-left:6px;background:#0d6efd;color:#fff;" href="/admin/tenants/{{ tenant.id }}/maintenance">Maintenance</a>
+                  <a class="btn" style="margin-left:6px;background:#6f42c1;color:#fff;" href="/admin/tenants/{{ tenant.id }}/transactions">Transactions</a>
+                  <a class="btn" style="margin-left:6px;background:#20c997;color:#fff;" href="/admin/tenants/{{ tenant.id }}/uploads">Uploads</a>
                 </div>
               </div>
             </div>

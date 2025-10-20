@@ -161,6 +161,22 @@
             </div>
           </div>
         </section>
+
+        <!-- Latest Maintenance Reply (if any) -->
+        {% if latest_maintenance_reply %}
+        <section class="tips-section">
+          <h2 class="section-title">🔔 Latest Reply from Admin</h2>
+          <div class="tips-grid">
+            <div class="tip-card">
+              <div class="tip-icon">📨</div>
+              <div class="tip-content">
+                <div class="tip-title">Maintenance Response</div>
+                <div class="tip-desc">{{ latest_maintenance_reply }}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+        {% endif %}
       </div>
       
       {% include 'includes/global_footer.html' %}

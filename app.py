@@ -1233,6 +1233,7 @@ def admin_proofs():
     return render_template('admin/proofs.html', proofs=proofs)
 
 @app.route('/admin/proofs/approve', methods=['POST'])
+@admin_required
 def admin_proofs_approve():
     proof_id = request.form.get('id')
     if proof_id:
@@ -1241,6 +1242,7 @@ def admin_proofs_approve():
     return redirect(url_for('admin_proofs'))
 
 @app.route('/admin/proofs/reject', methods=['POST'])
+@admin_required
 def admin_proofs_reject():
     proof_id = request.form.get('id')
     if proof_id:
@@ -1304,6 +1306,122 @@ def admin_finance():
                          total_income=total_income,
                          total_maintenance=total_maintenance,
                          net_profit=net_profit)
+
+
+# ---------- Per-tenant Admin Views ----------
+@app.route('/admin/tenants/<tenant_id>/maintenance')
+@admin_required
+def admin_tenant_maintenance(tenant_id):
+    # Show only this tenant's maintenance requests
+    requests = (
+        supabase.table('maintenance_requests')
+        .select('*')
+        .eq('tenant_id', tenant_id)
+        .order('created_at', desc=True)
+        .execute()
+        .data or []
+    )
+    for r in requests:
+        r['created_at'] = parse_datetime(r.get('created_at', ''))
+    tenant = (
+        supabase.table('tenants')
+        .select('id, tenants_name, tenants_username')
+        .eq('id', tenant_id)
+        .maybe_single()
+        .execute()
+        .data
+    )
+    return render_template('admin/tenant_maintenance.html', tenant=tenant, requests=requests)
+
+
+@app.route('/admin/tenants/<tenant_id>/transactions')
+@admin_required
+def admin_tenant_transactions(tenant_id):
+    # Show only this tenant's transactions
+    transactions = (
+        supabase.table('transactions')
+        .select('*')
+        .eq('tenant_id', tenant_id)
+        .order('created_at', desc=True)
+        .execute()
+        .data or []
+    )
+
+    # Calculate payment meta like in admin_transactions
+    for t in transactions:
+        required = float(t.get('required_amount', 0) or 0)
+        submitted = float(t.get('submitted_amount', 0) or 0)
+        t['payment_status'] = 'paid' if submitted >= required else 'partial'
+        t['remaining_amount'] = max(0, required - submitted)
+
+    tenant = (
+        supabase.table('tenants')
+        .select('id, tenants_name, tenants_username, room_id')
+        .eq('id', tenant_id)
+        .maybe_single()
+        .execute()
+        .data
+    )
+    return render_template('admin/tenant_transactions.html', tenant=tenant, transactions=transactions)
+
+
+@app.route('/admin/tenants/<tenant_id>/uploads')
+@admin_required
+def admin_tenant_uploads(tenant_id):
+    # Show only this tenant's proofs/uploads
+    proofs = (
+        supabase.table('transaction_proofs')
+        .select('*')
+        .eq('tenant_id', tenant_id)
+        .order('created_at', desc=True)
+        .execute()
+        .data or []
+    )
+    tenant = (
+        supabase.table('tenants')
+        .select('id, tenants_name, tenants_username')
+        .eq('id', tenant_id)
+        .maybe_single()
+        .execute()
+        .data
+    )
+    return render_template('admin/tenant_uploads.html', tenant=tenant, proofs=proofs)
+
+
+@app.route('/admin/tenants/<tenant_id>/maintenance/seen', methods=['POST'])
+@admin_required
+@csrf_protect
+def admin_tenant_maintenance_seen(tenant_id):
+    req_id = request.form.get('id')
+    if req_id:
+        try:
+            supabase.table('maintenance_requests').update({
+                'admin_seen': True
+            }).eq('id', req_id).eq('tenant_id', tenant_id).execute()
+            flash('Marked as seen.', 'success')
+        except Exception as e:
+            print('Mark seen error:', e)
+            flash('Failed to mark as seen.', 'error')
+    return redirect(url_for('admin_tenant_maintenance', tenant_id=tenant_id))
+
+
+@app.route('/admin/tenants/<tenant_id>/maintenance/reply', methods=['POST'])
+@admin_required
+@csrf_protect
+def admin_tenant_maintenance_reply(tenant_id):
+    req_id = request.form.get('id')
+    reply = request.form.get('reply')
+    if req_id and reply:
+        try:
+            supabase.table('maintenance_requests').update({
+                'admin_reply': reply,
+                'updated_at': datetime.utcnow().isoformat()
+            }).eq('id', req_id).eq('tenant_id', tenant_id).execute()
+            flash('Reply sent to tenant!', 'success')
+        except Exception as e:
+            print('Reply error:', e)
+            flash('Failed to send reply.', 'error')
+    return redirect(url_for('admin_tenant_maintenance', tenant_id=tenant_id))
 
 @app.route('/admin/uploads', methods=['GET'])
 @admin_required
