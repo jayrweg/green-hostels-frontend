@@ -14,8 +14,26 @@
     <div class="main-content-wrapper">
       <div class="main-section">
         <h1>Transactions for {{ tenant.tenants_name if tenant else 'Tenant' }}</h1>
+
+        {% if session['user']['role'] == 'superadmin' %}
+        <div class="action-buttons" style="margin: 1.5rem 0; display: flex; gap: 1rem; flex-wrap: wrap;">
+          <button onclick="openAddTransactionModal()" class="btn" style="background-color: #28a745; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            ➕ Register New Transaction
+          </button>
+        </div>
+        {% endif %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
         <main class="main-content">
-          <a class="go-trans-btn" href="/admin/transactions?tenant_id={{ tenant.id }}">Go to Transactions</a>
           <ul class="transaction-list">
             {% for t in transactions %}
             <li class="transaction-item {% if t.payment_status == 'paid' %}transaction-paid{% elif t.payment_status == 'partial' %}transaction-partial{% endif %}">
@@ -64,6 +82,13 @@
                 </div>
                 {% endif %}
               </div>
+              {% if session['user']['role'] == 'superadmin' and t.payment_status == 'partial' %}
+              <div class="trans-actions" style="margin-top: 1rem;">
+                <button onclick='openEditTransactionModal({{ t | tojson | safe }})' class="btn" style="background-color: #ffc107; color: #000; padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+                  ✏️ Update Transaction
+                </button>
+              </div>
+              {% endif %}
             </li>
             {% endfor %}
           </ul>
@@ -72,7 +97,79 @@
       {% include 'includes/global_footer.html' %}
     </div>
   </div>
+
+  <!-- Add Transaction Modal -->
+  <div id="addTransactionModal" class="modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+    <div style="background: white; max-width: 600px; margin: 2rem auto; padding: 2rem; border-radius: 8px;">
+      <h2>Register New Transaction</h2>
+      <form method="POST" action="/admin/transactions/add">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="tenant_id" value="{{ tenant.id }}">
+        <input type="hidden" name="room_number" value="{{ tenant.room_id }}">
+        <label>Required Amount:</label>
+        <input type="number" name="required_amount" step="0.01" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Submitted Amount:</label>
+        <input type="number" name="submitted_amount" step="0.01" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Transaction Date:</label>
+        <input type="date" name="transaction_date" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Check-in Date:</label>
+        <input type="date" name="check_in" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Check-out Date:</label>
+        <input type="date" name="check_out" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background-color: #28a745; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">Save</button>
+          <button type="button" onclick="closeAddTransactionModal()" class="btn" style="background-color: #dc3545; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Transaction Modal -->
+  <div id="editTransactionModal" class="modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+    <div style="background: white; max-width: 600px; margin: 2rem auto; padding: 2rem; border-radius: 8px;">
+      <h2>Update Transaction</h2>
+      <form method="POST" action="/admin/transactions/edit">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="id" id="editTransId">
+        <label>Required Amount:</label>
+        <input type="number" name="required_amount" id="editReqAmount" step="0.01" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Submitted Amount:</label>
+        <input type="number" name="submitted_amount" id="editSubAmount" step="0.01" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Transaction Date:</label>
+        <input type="date" name="transaction_date" id="editTransDate" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Check-in Date:</label>
+        <input type="date" name="check_in" id="editCheckIn" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Check-out Date:</label>
+        <input type="date" name="check_out" id="editCheckOut" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background-color: #ffc107; color: #000; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">Update</button>
+          <button type="button" onclick="closeEditTransactionModal()" class="btn" style="background-color: #dc3545; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="/static/js/sidebar.js"></script>
+  <script>
+    function openAddTransactionModal() {
+      document.getElementById('addTransactionModal').style.display = 'block';
+    }
+    function closeAddTransactionModal() {
+      document.getElementById('addTransactionModal').style.display = 'none';
+    }
+    function openEditTransactionModal(trans) {
+      document.getElementById('editTransId').value = trans.id;
+      document.getElementById('editReqAmount').value = trans.required_amount;
+      document.getElementById('editSubAmount').value = trans.submitted_amount;
+      document.getElementById('editTransDate').value = trans.transaction_date || trans.created_at.substring(0, 10);
+      document.getElementById('editCheckIn').value = trans.check_in;
+      document.getElementById('editCheckOut').value = trans.check_out;
+      document.getElementById('editTransactionModal').style.display = 'block';
+    }
+    function closeEditTransactionModal() {
+      document.getElementById('editTransactionModal').style.display = 'none';
+    }
+  </script>
 </body>
 </html>
 

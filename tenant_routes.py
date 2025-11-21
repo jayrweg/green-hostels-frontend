@@ -47,34 +47,30 @@ def tenant_dashboard():
         transaction = None
     
     try:
-        tenant_info = supabase.table('tenants').select('check_out').eq('id', tenant_id).single().execute().data
+        tenant_info = supabase.table('tenants').select('check_out, next_due_date').eq('id', tenant_id).single().execute().data
     except Exception:
         tenant_info = None
-    
+
     payment_status = None
     remaining_amount = 0
     due_date = None
     farthest_due_date = None
-    
+
     if transaction:
         required = float(transaction.get('required_amount', 0))
         submitted = float(transaction.get('submitted_amount', 0))
         remaining_amount = max(0, required - submitted)
         payment_status = 'paid' if submitted >= required else 'partial'
-    
-    if tenant_info and tenant_info.get('check_out'):
-        try:
+
+    # Use next_due_date from tenants table (updated automatically when transactions are added)
+    if tenant_info:
+        if tenant_info.get('next_due_date'):
+            farthest_due_date = tenant_info.get('next_due_date')
+            due_date = farthest_due_date
+        elif tenant_info.get('check_out'):
+            # Fallback to check_out if next_due_date not set
             due_date = tenant_info.get('check_out')
             farthest_due_date = due_date
-        except:
-            pass
-    
-    # Find the farthest due date from all transactions
-    if transactions:
-        for trans in transactions:
-            if trans.get('check_out'):
-                if not farthest_due_date or trans.get('check_out') > farthest_due_date:
-                    farthest_due_date = trans.get('check_out')
     
     # Pull most recent admin reply to maintenance if stored
     latest_reply = None

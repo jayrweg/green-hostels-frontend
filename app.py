@@ -321,6 +321,7 @@ def admin_tenants():
 
     tenants_resp = supabase.table("tenants").select("*").execute()
     tenants = tenants_resp.data or []
+    admin_id = session['user']['id']
 
     # Append room and emergency contacts
     for tenant in tenants:
@@ -344,6 +345,45 @@ def admin_tenants():
             .execute()
         )
         tenant["emergency_contacts"] = ec_resp.data or []
+
+        # Count maintenance requests not attended (pending status and not seen by admin)
+        maintenance_pending = (
+            supabase.table("maintenance_requests")
+            .select("id", count="exact")
+            .eq("tenant_id", tenant["id"])
+            .eq("status", "pending")
+            .eq("admin_seen", False)
+            .execute()
+        )
+        tenant["maintenance_count"] = maintenance_pending.count or 0
+
+        # Count uploads not yet viewed by this admin
+        uploads = (
+            supabase.table("transaction_proofs")
+            .select("id")
+            .eq("tenant_id", tenant["id"])
+            .execute()
+            .data or []
+        )
+        seen_uploads = (
+            supabase.table("tenant_uploads_seen")
+            .select("upload_id")
+            .eq("admin_id", admin_id)
+            .execute()
+            .data or []
+        )
+        seen_ids = [s["upload_id"] for s in seen_uploads]
+        tenant["uploads_count"] = len([u for u in uploads if u["id"] not in seen_ids])
+
+        # Count incomplete transactions (not verified)
+        unpaid_trans = (
+            supabase.table("transactions")
+            .select("id", count="exact")
+            .eq("tenant_id", tenant["id"])
+            .eq("verified", False)
+            .execute()
+        )
+        tenant["unpaid_count"] = unpaid_trans.count or 0
 
     available_rooms = (
         supabase.table("rooms")
@@ -1184,8 +1224,23 @@ def add_transaction():
         'check_in': check_in,
         'check_out': check_out,
         'verified': True,  # Admin-added transactions are auto-verified
-        'verified_by': session['user']['id']  # Track who verified it
+        'verified_by': session['user']['id'],  # Track who verified it
+        'registered_by': session['user']['id']  # Track who registered it
     }).execute()
+
+    # Update tenant's next_due_date to the check_out date (furthest due date)
+    if tenant_id_val and check_out:
+        try:
+            # Get current tenant's next_due_date
+            tenant_data = supabase.table('tenants').select('next_due_date').eq('id', tenant_id_val).maybe_single().execute().data
+            if tenant_data:
+                current_due = tenant_data.get('next_due_date')
+                # Update if new check_out is later than current due date or if no due date exists
+                if not current_due or check_out > current_due:
+                    supabase.table('tenants').update({'next_due_date': check_out}).eq('id', tenant_id_val).execute()
+        except Exception as e:
+            print(f'Error updating next_due_date: {e}')
+
     flash('Transaction added!', 'success')
     return redirect(url_for('admin_transactions'))
 
@@ -1210,6 +1265,9 @@ def edit_transaction():
     required_amount_val = to_float(required_amount)
     submitted_amount_val = to_float(submitted_amount)
 
+    # Get the transaction to find tenant_id
+    trans_data = supabase.table('transactions').select('tenant_id').eq('id', trans_id).maybe_single().execute().data
+
     supabase.table('transactions').update({
         'required_amount': required_amount_val,
         'submitted_amount': submitted_amount_val,
@@ -1217,6 +1275,19 @@ def edit_transaction():
         'check_in': check_in,
         'check_out': check_out
     }).eq('id', trans_id).execute()
+
+    # Update tenant's next_due_date if check_out changed
+    if trans_data and trans_data.get('tenant_id') and check_out:
+        try:
+            tenant_id = trans_data['tenant_id']
+            # Get all transactions for this tenant to find the furthest check_out date
+            all_trans = supabase.table('transactions').select('check_out').eq('tenant_id', tenant_id).execute().data or []
+            furthest_date = max([t.get('check_out') for t in all_trans if t.get('check_out')], default=None)
+            if furthest_date:
+                supabase.table('tenants').update({'next_due_date': furthest_date}).eq('id', tenant_id).execute()
+        except Exception as e:
+            print(f'Error updating next_due_date: {e}')
+
     flash('Transaction updated!', 'success')
     return redirect(url_for('admin_transactions'))
 
@@ -1253,59 +1324,114 @@ def admin_proofs_reject():
 @app.route('/admin/finance')
 @superadmin_only
 def admin_finance():
-    # Fetch only verified transactions and resolved maintenance requests
-    transactions = (
-        supabase.table('transactions')
-        .select('id, required_amount, submitted_amount, created_at, transaction_date, verified')
-        .eq('verified', True)  # Only verified transactions count towards income
-        .execute()
-        .data or []
-    )
-    maints = (
-        supabase.table('maintenance_requests')
-        .select('id, amount_used, resolved_date, status')
-        .eq('status', 'resolved')
-        .execute()
-        .data or []
-    )
+    # Get date range filter if provided
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
 
-    # Group by month
-    monthly_income = defaultdict(float)
-    monthly_maintenance = defaultdict(float)
+    # Fetch all verified transactions (Debit entries - income)
+    transactions_query = supabase.table('transactions').select('*, registered_by').eq('verified', True).order('transaction_date', desc=True)
+    transactions = transactions_query.execute().data or []
 
+    # Fetch all expenses (Credit entries)
+    expenses_query = supabase.table('expenses').select('*, registered_by').order('expense_date', desc=True)
+    expenses = expenses_query.execute().data or []
+
+    # Get admin names for registered_by
+    admin_ids = set()
     for t in transactions:
-        month = (t.get('transaction_date') or t['created_at'])[:7]  # 'YYYY-MM'
-        monthly_income[month] += float(t.get('submitted_amount') or 0)
+        if t.get('registered_by'):
+            admin_ids.add(t['registered_by'])
+    for e in expenses:
+        if e.get('registered_by'):
+            admin_ids.add(e['registered_by'])
 
-    for m in maints:
-        if m.get('resolved_date'):
-            month = m['resolved_date'][:7]
-            monthly_maintenance[month] += float(m.get('amount_used') or 0)
+    admin_names = {}
+    if admin_ids:
+        admins = supabase.table('admins').select('id, name').in_('id', list(admin_ids)).execute().data or []
+        admin_names = {a['id']: a.get('name', 'Unknown') for a in admins}
 
-    # Calculate totals
-    total_income = sum(monthly_income.values())
-    total_maintenance = sum(monthly_maintenance.values())
-    net_profit = total_income - total_maintenance
+    # Build ledger entries
+    ledger_entries = []
 
-    # Prepare summary
-    months = sorted(set(list(monthly_income.keys()) + list(monthly_maintenance.keys())))
-    summary = []
-    for month in months:
-        income = monthly_income.get(month, 0)
-        maintenance = monthly_maintenance.get(month, 0)
-        net = income - maintenance
-        summary.append({
-            'month': month,
-            'income': income,
-            'maintenance': maintenance,
-            'net': net
+    # Add transactions as Debit
+    for t in transactions:
+        trans_date = t.get('transaction_date') or t.get('created_at', '')[:10]
+        ledger_entries.append({
+            'date': trans_date,
+            'type': 'Debit',
+            'amount': float(t.get('submitted_amount') or 0),
+            'description': f"Payment from {t.get('tenant_name', 'Unknown')} - Room {t.get('room_number', 'N/A')}",
+            'registered_by': admin_names.get(t.get('registered_by'), 'Unknown'),
+            'created_at': t.get('created_at', '')
         })
 
-    return render_template('admin/finance.html', 
-                         summary=summary, 
-                         total_income=total_income,
-                         total_maintenance=total_maintenance,
-                         net_profit=net_profit)
+    # Add expenses as Credit
+    for e in expenses:
+        ledger_entries.append({
+            'date': e.get('expense_date', '')[:10] if e.get('expense_date') else '',
+            'type': 'Credit',
+            'amount': float(e.get('amount') or 0),
+            'description': e.get('reason', 'No description'),
+            'registered_by': admin_names.get(e.get('registered_by'), 'Unknown'),
+            'created_at': e.get('created_at', '')
+        })
+
+    # Sort ledger by date descending
+    ledger_entries.sort(key=lambda x: x.get('date', ''), reverse=True)
+
+    # Apply date filter if provided
+    filtered_entries = ledger_entries
+    if date_from and date_to:
+        filtered_entries = [e for e in ledger_entries if date_from <= e.get('date', '') <= date_to]
+
+    # Calculate totals for filtered entries
+    total_debit = sum(e['amount'] for e in filtered_entries if e['type'] == 'Debit')
+    total_credit = sum(e['amount'] for e in filtered_entries if e['type'] == 'Credit')
+    balance = total_debit - total_credit
+
+    # Calculate overall totals (no filter)
+    overall_debit = sum(e['amount'] for e in ledger_entries if e['type'] == 'Debit')
+    overall_credit = sum(e['amount'] for e in ledger_entries if e['type'] == 'Credit')
+    overall_balance = overall_debit - overall_credit
+
+    return render_template('admin/finance.html',
+                         ledger_entries=filtered_entries,
+                         total_debit=total_debit,
+                         total_credit=total_credit,
+                         balance=balance,
+                         overall_debit=overall_debit,
+                         overall_credit=overall_credit,
+                         overall_balance=overall_balance,
+                         date_from=date_from,
+                         date_to=date_to)
+
+
+@app.route('/admin/finance/add_expense', methods=['POST'])
+@superadmin_only
+@csrf_protect
+def add_expense():
+    amount = request.form.get('amount')
+    reason = request.form.get('reason')
+    expense_date = request.form.get('expense_date')
+
+    if not amount or not reason:
+        flash('Amount and reason are required!', 'error')
+        return redirect(url_for('admin_finance'))
+
+    try:
+        amount_val = float(amount)
+        supabase.table('expenses').insert({
+            'amount': amount_val,
+            'reason': reason,
+            'expense_date': expense_date or datetime.now().date().isoformat(),
+            'registered_by': session['user']['id']
+        }).execute()
+        flash('Expense added successfully!', 'success')
+    except Exception as e:
+        print(f'Error adding expense: {e}')
+        flash('Failed to add expense!', 'error')
+
+    return redirect(url_for('admin_finance'))
 
 
 # ---------- Per-tenant Admin Views ----------
@@ -1368,6 +1494,7 @@ def admin_tenant_transactions(tenant_id):
 @app.route('/admin/tenants/<tenant_id>/uploads')
 @admin_required
 def admin_tenant_uploads(tenant_id):
+    admin_id = session['user']['id']
     # Show only this tenant's proofs/uploads
     proofs = (
         supabase.table('transaction_proofs')
@@ -1377,6 +1504,21 @@ def admin_tenant_uploads(tenant_id):
         .execute()
         .data or []
     )
+
+    # Check which uploads have been seen by this admin
+    seen_uploads = (
+        supabase.table("tenant_uploads_seen")
+        .select("upload_id")
+        .eq("admin_id", admin_id)
+        .execute()
+        .data or []
+    )
+    seen_ids = [s["upload_id"] for s in seen_uploads]
+
+    # Add seen status to each proof
+    for proof in proofs:
+        proof["seen_by_admin"] = proof["id"] in seen_ids
+
     tenant = (
         supabase.table('tenants')
         .select('id, tenants_name, tenants_username')
@@ -1385,7 +1527,7 @@ def admin_tenant_uploads(tenant_id):
         .execute()
         .data
     )
-    return render_template('admin/tenant_uploads.html', tenant=tenant, proofs=proofs)
+    return render_template('admin/tenant_uploads.html', tenant=tenant, proofs=proofs, tenant_id=tenant_id)
 
 
 @app.route('/admin/tenants/<tenant_id>/maintenance/seen', methods=['POST'])
@@ -1422,6 +1564,27 @@ def admin_tenant_maintenance_reply(tenant_id):
             print('Reply error:', e)
             flash('Failed to send reply.', 'error')
     return redirect(url_for('admin_tenant_maintenance', tenant_id=tenant_id))
+
+
+@app.route('/admin/tenants/<tenant_id>/uploads/mark_seen', methods=['POST'])
+@admin_required
+@csrf_protect
+def admin_tenant_upload_mark_seen(tenant_id):
+    admin_id = session['user']['id']
+    upload_id = request.form.get('upload_id')
+    if upload_id:
+        try:
+            # Use upsert to avoid duplicates
+            supabase.table('tenant_uploads_seen').upsert({
+                'admin_id': admin_id,
+                'upload_id': upload_id
+            }).execute()
+            flash('Upload marked as seen!', 'success')
+        except Exception as e:
+            print('Mark upload seen error:', e)
+            flash('Failed to mark upload as seen.', 'error')
+    return redirect(url_for('admin_tenant_uploads', tenant_id=tenant_id))
+
 
 @app.route('/admin/uploads', methods=['GET'])
 @admin_required

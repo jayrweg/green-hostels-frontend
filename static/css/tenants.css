@@ -120,8 +120,67 @@ body {
 .tenant-card-actions {
   margin-top: 1rem;
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-actions-row,
+.tenant-data-actions-row {
+  display: flex;
+  gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.btn-maintenance,
+.btn-transactions,
+.btn-uploads {
+  position: relative;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-maintenance {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.btn-maintenance:hover {
+  background-color: #138496;
+}
+
+.btn-transactions {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-transactions:hover {
+  background-color: #218838;
+}
+
+.btn-uploads {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.btn-uploads:hover {
+  background-color: #e0a800;
+}
+
+.count-badge {
+  background-color: #dc3545;
+  color: white;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
 }
 .btn.edit, .btn.shift {
   background: #ffe082;

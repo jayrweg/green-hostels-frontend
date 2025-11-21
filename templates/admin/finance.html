@@ -3,90 +3,260 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <title>Finance - Admin</title>
+  <title>Finance - SuperAdmin</title>
   <link rel="stylesheet" href="/static/css/base.css" />
   <link rel="stylesheet" href="/static/css/admin_finance.css" />
+  <style>
+    .ledger-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .filter-form {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .filter-form label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-weight: 600;
+    }
+    .filter-form input[type="date"] {
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .filter-form button {
+      padding: 0.5rem 1.5rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .filter-form button:hover {
+      background-color: #0056b3;
+    }
+    .btn-add-expense {
+      background-color: #dc3545;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-add-expense:hover {
+      background-color: #c82333;
+    }
+    .ledger-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2rem 0;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .ledger-table thead {
+      background-color: #343a40;
+      color: white;
+    }
+    .ledger-table th,
+    .ledger-table td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .ledger-table tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+    .type-debit {
+      color: #28a745;
+      font-weight: 600;
+    }
+    .type-credit {
+      color: #dc3545;
+      font-weight: 600;
+    }
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .summary-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .summary-card.debit {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    .summary-card.credit {
+      background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+    }
+    .summary-card.balance {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .summary-card h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+    .summary-card .amount {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    @media (max-width: 768px) {
+      .ledger-table {
+        font-size: 0.85rem;
+      }
+      .ledger-table th,
+      .ledger-table td {
+        padding: 0.5rem;
+      }
+      .summary-card .amount {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
 </head>
 <body>
   {% include 'includes/global_header.html' %}
-  
+
   <div class="main-layout">
     {% include 'admin/admin_sidebar.html' %}
-    
+
     <div class="main-content-wrapper">
       <div class="main-section">
-        <h1>Finance Overview</h1>
-        
-        <!-- Total Summary Cards -->
-        <div class="total-summary">
-          <div class="summary-card income-card">
-            <div class="card-icon">💰</div>
-            <div class="card-content">
-              <div class="card-title">Total Income</div>
-              <div class="card-value">{{ total_income|tsh }}</div>
-              <div class="card-subtitle">From verified transactions</div>
+        <div class="ledger-header">
+          <h1>Financial Ledger (Debit/Credit)</h1>
+          <button onclick="openAddExpenseModal()" class="btn-add-expense">➕ Add Expense</button>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+              {% endfor %}
             </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Date Filter -->
+        <form method="GET" action="/admin/finance" class="filter-form">
+          <label>
+            From Date:
+            <input type="date" name="date_from" value="{{ date_from or '' }}">
+          </label>
+          <label>
+            To Date:
+            <input type="date" name="date_to" value="{{ date_to or '' }}">
+          </label>
+          <button type="submit">Filter</button>
+          {% if date_from or date_to %}
+            <a href="/admin/finance" style="padding: 0.5rem 1rem; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px;">Clear Filter</a>
+          {% endif %}
+        </form>
+
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+          <div class="summary-card debit">
+            <h3>Total Debit (Income)</h3>
+            <p class="amount">{{ (total_debit if date_from else overall_debit)|tsh }}</p>
           </div>
-          <div class="summary-card maintenance-card">
-            <div class="card-icon">🔧</div>
-            <div class="card-content">
-              <div class="card-title">Total Maintenance</div>
-              <div class="card-value">{{ total_maintenance|tsh }}</div>
-              <div class="card-subtitle">Resolved maintenance costs</div>
-            </div>
+          <div class="summary-card credit">
+            <h3>Total Credit (Expenses)</h3>
+            <p class="amount">{{ (total_credit if date_from else overall_credit)|tsh }}</p>
           </div>
-          <div class="summary-card profit-card">
-            <div class="card-icon">📊</div>
-            <div class="card-content">
-              <div class="card-title">Net Profit</div>
-              <div class="card-value {% if net_profit >= 0 %}positive{% else %}negative{% endif %}">{{ net_profit|tsh }}</div>
-              <div class="card-subtitle">Income - Maintenance</div>
-            </div>
+          <div class="summary-card balance">
+            <h3>Balance</h3>
+            <p class="amount">{{ (balance if date_from else overall_balance)|tsh }}</p>
           </div>
         </div>
 
-        <!-- Monthly Breakdown -->
-        <h2>Monthly Breakdown</h2>
-        <div class="finance-cards">
-          {% for m in summary %}
-          <div class="finance-card">
-            <div class="finance-month">{{ m.month }}</div>
-            <div class="finance-income">Income: {{ m.income|tsh }}</div>
-            <div class="finance-maint">Maintenance: {{ m.maintenance|tsh }}</div>
-            <div class="finance-net {% if m.net >= 0 %}positive{% else %}negative{% endif %}">
-              Net: {{ m.net|tsh }}
-            </div>
-          </div>
-          {% endfor %}
-        </div>
-        
-        <table class="finance-table">
+        <!-- Ledger Table -->
+        <h2>{% if date_from and date_to %}Ledger Entries ({{ date_from }} to {{ date_to }}){% else %}All Ledger Entries{% endif %}</h2>
+        <table class="ledger-table">
           <thead>
             <tr>
-              <th>Month</th>
-              <th>Total Income</th>
-              <th>Total Maintenance</th>
-              <th>Net Profit</th>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Amount</th>
+              <th>Registered By</th>
             </tr>
           </thead>
           <tbody>
-            {% for m in summary %}
+            {% for entry in ledger_entries %}
             <tr>
-              <td>{{ m.month }}</td>
-              <td>{{ m.income|tsh }}</td>
-              <td>{{ m.maintenance|tsh }}</td>
-              <td class="{% if m.net >= 0 %}positive{% else %}negative{% endif %}">{{ m.net|tsh }}</td>
+              <td>{{ entry.date }}</td>
+              <td class="{% if entry.type == 'Debit' %}type-debit{% else %}type-credit{% endif %}">
+                {{ entry.type }}
+              </td>
+              <td>{{ entry.description }}</td>
+              <td>{{ entry.amount|tsh }}</td>
+              <td>{{ entry.registered_by }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
+
+        {% if not ledger_entries %}
+          <p style="text-align: center; padding: 2rem; color: #666;">No ledger entries found for the selected period.</p>
+        {% endif %}
       </div>
-      
+
       {% include 'includes/global_footer.html' %}
     </div>
   </div>
 
+  <!-- Add Expense Modal -->
+  <div id="addExpenseModal" class="modal" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; overflow-y: auto;">
+    <div style="background: white; max-width: 500px; margin: 2rem auto; padding: 2rem; border-radius: 8px;">
+      <h2>Add Expense</h2>
+      <form method="POST" action="/admin/finance/add_expense">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label>Amount (TSH):</label>
+        <input type="number" name="amount" step="0.01" required style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <label>Reason/Description:</label>
+        <textarea name="reason" required rows="3" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;"></textarea>
+        <label>Expense Date:</label>
+        <input type="date" name="expense_date" value="{{ 'now'|default('') }}" style="width: 100%; padding: 0.5rem; margin-bottom: 1rem;">
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <button type="submit" class="btn" style="background-color: #dc3545; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">Add Expense</button>
+          <button type="button" onclick="closeAddExpenseModal()" class="btn" style="background-color: #6c757d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 6px; cursor: pointer;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="/static/js/sidebar.js"></script>
-  
+  <script>
+    function openAddExpenseModal() {
+      const dateInput = document.querySelector('input[name="expense_date"]');
+      if (!dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+      }
+      document.getElementById('addExpenseModal').style.display = 'block';
+    }
+    function closeAddExpenseModal() {
+      document.getElementById('addExpenseModal').style.display = 'none';
+    }
+  </script>
+
 </body>
 </html>
